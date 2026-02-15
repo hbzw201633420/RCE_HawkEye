@@ -1,7 +1,7 @@
 # RCE HawkEye (RCE鹰眼)
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.0.2-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/version-0.0.3-blue.svg" alt="Version">
   <img src="https://img.shields.io/badge/python-3.8+-green.svg" alt="Python">
   <img src="https://img.shields.io/badge/license-MIT-orange.svg" alt="License">
   <img src="https://img.shields.io/badge/author-hbzw-red.svg" alt="Author">
@@ -492,3 +492,4 @@ asyncio.run(main())
 <p align="center">
   <b>⭐ 如果这个项目对你有帮助，请给一个 Star ⭐</b>
 </p>
+
