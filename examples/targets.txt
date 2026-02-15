@@ -1,0 +1,5 @@
+http://example.com/api?cmd=test
+http://example.com/search?q=test
+http://example.com/exec?file=readme.txt
+http://testsite.com/ping?host=localhost
+http://vulnerable-app.com/run?command=ls

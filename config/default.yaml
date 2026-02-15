@@ -1,0 +1,154 @@
+scanner:
+  timeout: 10
+  max_concurrent: 10
+  max_retries: 2
+  delay_threshold: 4.0
+  user_agent: "RCE-HawkEye/0.0.2"
+  verify_ssl: false
+  proxy: null
+
+domain:
+  restrict_to_root: true
+  allowed_domains: []
+  blocked_domains:
+    - "localhost"
+    - "127.0.0.1"
+    - "0.0.0.0"
+    - "*.internal"
+    - "*.gov.cn"
+    - "*.local"
+  max_depth: 2
+  max_pages: 100
+  exclude_extensions:
+    - ".jpg"
+    - ".jpeg"
+    - ".png"
+    - ".gif"
+    - ".bmp"
+    - ".svg"
+    - ".css"
+    - ".woff"
+    - ".woff2"
+    - ".ttf"
+    - ".eot"
+    - ".pdf"
+    - ".doc"
+    - ".docx"
+    - ".xls"
+    - ".xlsx"
+    - ".ppt"
+    - ".pptx"
+    - ".zip"
+    - ".rar"
+    - ".tar"
+    - ".gz"
+    - ".7z"
+    - ".mp3"
+    - ".mp4"
+    - ".avi"
+    - ".mov"
+    - ".wmv"
+    - ".flv"
+    - ".ico"
+
+crawler:
+  enabled: true
+  max_depth: 2
+  max_pages: 100
+  follow_redirects: true
+  extract_forms: true
+  extract_links: true
+
+dir_scan:
+  enabled: true
+  threads: 10
+  timeout: 10
+  extensions:
+    - ".php"
+    - ".asp"
+    - ".aspx"
+    - ".jsp"
+    - ".html"
+    - ".js"
+    - ".json"
+    - ".xml"
+    - ".txt"
+    - ".bak"
+    - ".old"
+    - ".sql"
+    - ".conf"
+    - ".config"
+    - ".inc"
+  status_codes:
+    - 200
+    - 301
+    - 302
+    - 403
+    - 500
+  exclude_codes:
+    - 404
+  wordlist: "config/wordlists/dirs.txt"
+  max_depth: 2
+  recursive: true
+  follow_redirects: false
+
+param_extract:
+  enabled: true
+  threads: 10
+  timeout: 10
+  max_depth: 2
+  max_pages: 100
+  param_wordlist: "config/wordlists/params.txt"
+  fuzz_params: true
+  extract_from_js: true
+  extract_from_html: true
+
+http:
+  default_headers:
+    Accept: "*/*"
+    Accept-Language: "en-US,en;q=0.9"
+    Connection: "keep-alive"
+  
+  follow_redirects: true
+  max_redirects: 5
+
+detection:
+  time_based:
+    enabled: true
+    delay_threshold: 4.0
+    baseline_samples: 3
+  
+  echo_based:
+    enabled: true
+    markers:
+      - "RCE_TEST_MARKER_12345"
+      - "VULN_DETECTED"
+      - "INJECT_SUCCESS"
+  
+  dns_based:
+    enabled: false
+    dns_server: "dns.example.com"
+  
+  file_based:
+    enabled: false
+    check_paths:
+      - "/tmp/rce_test.txt"
+      - "C:\\temp\\rce_test.txt"
+
+payloads:
+  include_unix: true
+  include_windows: true
+  include_encoded: true
+  custom_payloads_file: null
+
+report:
+  output_dir: "./reports"
+  default_format: "json"
+  include_request: true
+  include_response: true
+  max_response_length: 5000
+
+logging:
+  level: "INFO"
+  file: null
+  format: "%(asctime)s - %(levelname)s - %(message)s"
