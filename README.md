@@ -1,7 +1,7 @@
 # RCE HawkEye (RCE鹰眼)
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.0.3-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/version-0.0.4-blue.svg" alt="Version">
   <img src="https://img.shields.io/badge/python-3.8+-green.svg" alt="Python">
   <img src="https://img.shields.io/badge/license-MIT-orange.svg" alt="License">
   <img src="https://img.shields.io/badge/author-hbzw-red.svg" alt="Author">
@@ -20,16 +20,18 @@
 ### ✨ 核心特性
 
 - 🔍 **多维度扫描** - 支持 URL 参数、表单、HTTP 头、Cookie、POST 数据等多种输入点
-- 🌐 **多语言支持** - 自动识别 PHP/JSP/ASP/ASPX/Python 等语言的代码执行漏洞
+- 🌐 **多语言支持** - 自动识别 PHP/JSP/ASP/ASPX/Python/Node.js/Ruby/Go/Perl/Lua 等语言的代码执行漏洞
 - 🕷️ **智能爬虫** - 自动爬取网站路径和参数，发现隐藏的注入点
 - 📂 **目录扫描** - 集成字典扫描，发现隐藏目录和敏感文件
 - 🎯 **参数模糊测试** - 使用字典发现隐藏参数，支持 GET/POST 双模式
 - 🔧 **交互式选择** - 目录扫描后可按状态码或通配符选择要测试的路径
 - 🎯 **多种检测模式** - 无害化检测、常规回显检测、WAF 绕过检测
+- 📊 **检测等级** - 快速/标准/深度/完全四级检测，平衡速度与覆盖率
+- 🛡️ **WAF绕过** - 支持70+种WAF绕过技术，包括编码、混淆、变异等
 - 📦 **流量包解析** - 支持从文本文件解析 HTTP 流量包进行检测
 - 📊 **详细报告** - JSON/HTML/Markdown 多格式报告，包含完整响应内容
 - ⚙️ **灵活配置** - 支持域名白名单/黑名单、自定义字典等配置
-- 🛡️ **安全测试** - 无害化模式使用时间盲注，不执行实际命令
+- 🔒 **安全测试** - 无害化模式使用时间盲注，不执行实际命令
 
 ---
 
@@ -68,6 +70,9 @@ python RCE_HawkEye.py -u "http://example.com" --crawl
 
 # 目录扫描 + 参数模糊测试
 python RCE_HawkEye.py -u "http://example.com" --dir-scan --param-fuzz
+
+# 指定并发数和检测等级
+python RCE_HawkEye.py -u "http://example.com" -c 20 --no-interactive
 ```
 
 ---
@@ -163,55 +168,14 @@ python RCE_HawkEye.py -u "http://example.com" --no-interactive --waf-bypass
 
 ---
 
-## 📂 目录扫描
+## 📊 检测等级
 
-自动扫描隐藏目录和文件：
-
-```bash
-# 基本目录扫描
-python RCE_HawkEye.py -u "http://example.com" --dir-scan
-
-# 使用自定义字典
-python RCE_HawkEye.py -u "http://example.com" --dir-scan --dir-wordlist my_dirs.txt
-
-# 设置线程数
-python RCE_HawkEye.py -u "http://example.com" --dir-scan --dir-threads 20
-```
-
-### 交互式路径选择
-
-目录扫描完成后，可以按状态码或通配符选择要进行参数扫描的路径：
-
-```
-============================================================
-选择要进行参数扫描的路径
-============================================================
-输入格式:
-  - 状态码: 200,301,302
-  - 目录通配符: admin*, *.php, *shell*
-  - 组合: 200,admin*,*.php
-  - 直接回车: 扫描全部路径
-------------------------------------------------------------
-请输入过滤条件 [默认:全部]: 200,*.php
-[+] 已选择 5 个路径进行参数扫描
-```
-
----
-
-## 🎯 参数模糊测试
-
-使用字典发现隐藏参数，支持 GET 和 POST 双模式：
-
-```bash
-# 基本参数模糊测试
-python RCE_HawkEye.py -u "http://example.com" --param-fuzz
-
-# 使用自定义字典
-python RCE_HawkEye.py -u "http://example.com" --param-fuzz --param-wordlist my_params.txt
-
-# 目录扫描 + 参数模糊测试
-python RCE_HawkEye.py -u "http://example.com" --dir-scan --param-fuzz
-```
+| 等级 | Payload数量/参数 | 特点 |
+|------|------------------|------|
+| **快速扫描** | ~10个 | 仅测试最关键的CODE_EXEC类型Payload |
+| **标准扫描** | ~30个 | 平衡速度和覆盖率，包含模板注入 |
+| **深度扫描** | ~60个 | 全面检测，包含WAF绕过 |
+| **完全扫描** | 全部 | 测试所有Payload |
 
 ---
 
@@ -226,41 +190,29 @@ python RCE_HawkEye.py -u "http://example.com" --dir-scan --param-fuzz
 | ASP | `.asp` | `WScript.Shell` |
 | ASPX | `.aspx`, `.ashx` | `System.Diagnostics.Process.Start()` |
 | Python | `.py`, `.cgi` | `__import__()`, `eval()`, `exec()`, `subprocess` |
+| Node.js | `.js`, `.mjs` | `require('child_process')`, `process.binding()` |
+| Ruby | `.rb`, `.erb` | `system()`, `exec()`, `IO.popen()` |
+| Go | `.go` | `exec.Command()`, `syscall.Exec()` |
+| Perl | `.pl`, `.cgi` | `system()`, `exec()`, `qx{}` |
+| Lua | `.lua` | `os.execute()`, `io.popen()` |
 
 ---
 
-## 🕷️ 网页爬虫
+## 🛡️ WAF 绕过技术
 
-自动爬取网站，发现路径和参数：
+支持 70+ 种 WAF 绕过技术：
 
-```bash
-# 基本爬取
-python RCE_HawkEye.py -u "http://example.com" --crawl
-
-# 设置爬取深度和页面数
-python RCE_HawkEye.py -u "http://example.com" --crawl --crawl-depth 3 --crawl-pages 50
-
-# 限制域名
-python RCE_HawkEye.py -u "http://example.com" --crawl --allow-domains example.com,api.example.com
-```
-
----
-
-## 📦 流量包解析
-
-支持解析 HTTP 流量包文件：
-
-```
-POST /api/exec HTTP/1.1
-Content-Type: application/json
-Host: www.example.com
-
-{"cmd": "test", "args": "value"}
-```
-
-```bash
-python RCE_HawkEye.py -r traffic.txt --no-interactive --harmless
-```
+| 技术类型 | 描述 | 示例 |
+|----------|------|------|
+| **URL编码** | 单重/双重URL编码 | `%3B%20ls%3B` |
+| **Base64编码** | Base64编码执行 | `$(echo'bHM='\|base64-d)` |
+| **注释混淆** | 插入注释分割 | `sys/**/tem('ls')` |
+| **大小写变换** | 混合大小写 | `sYsTeM('ls')` |
+| **引号分割** | 引号打断关键词 | `l''s`, `wh''oami` |
+| **变量切片** | Shell变量切片 | `l${PATH:0:0}s` |
+| **IFS变量** | 使用IFS替换空格 | `l${IFS}s` |
+| **通配符** | 路径通配符 | `/???/??t /???/p??s??` |
+| **脱字符** | Windows脱字符 | `d^ir`, `w^hoami` |
 
 ---
 
@@ -273,6 +225,9 @@ RCE_HawkEye/
 │   ├── scanner.py           # 核心扫描器
 │   ├── detector.py          # 漏洞检测器
 │   ├── payload_generator.py # Payload 生成器
+│   ├── waf_bypass.py        # WAF绕过生成器
+│   ├── tech_detector.py     # 技术栈检测器
+│   ├── intelligent_scanner.py # 智能扫描器
 │   ├── reporter.py          # 报告生成器
 │   ├── crawler.py           # 网页爬虫
 │   ├── dir_scanner.py       # 目录扫描器
@@ -299,99 +254,20 @@ RCE_HawkEye/
 
 ---
 
-## 🎯 Payload 类型
-
-### 时间盲注 Payload
-
-| 平台 | Payload 示例 |
-|------|-------------|
-| Unix | `; sleep 5;` |
-| Unix | `\| sleep 5` |
-| Unix | `` `sleep 5` `` |
-| Unix | `$(sleep 5)` |
-| Windows | `& timeout 5` |
-| Windows | `\| ping -n 5 127.0.0.1` |
-
-### 回显型 Payload
-
-| 平台 | Payload 示例 | 说明 |
-|------|-------------|------|
-| Unix | `; ls -la;` | 列出目录 |
-| Unix | `; whoami;` | 当前用户 |
-| Unix | `; id;` | 用户 ID |
-| Unix | `; pwd;` | 当前路径 |
-| Unix | `; cat /etc/passwd;` | 读取文件 |
-| Windows | `& dir` | 列出目录 |
-| Windows | `& whoami` | 当前用户 |
-
-### 代码执行 Payload
-
-| 语言 | Payload 示例 |
-|------|-------------|
-| PHP | `system('ls');` |
-| PHP | `passthru('whoami');` |
-| PHP | `shell_exec('id');` |
-| JSP | `<%Runtime.getRuntime().exec("ls");%>` |
-| ASP | `<%Set shell=Server.CreateObject("WScript.Shell")%>` |
-| Python | `__import__('os').system('ls')` |
-
-### WAF 绕过 Payload
-
-| 技术 | Payload 示例 |
-|------|-------------|
-| 引号分割 | `; l''s;` |
-| 反斜杠 | `; l\s;` |
-| 变量切片 | `; l${PATH:0:0}s;` |
-| IFS 替换 | `;${IFS}ls;` |
-| URL 编码 | `%0als` |
-| Base64 | `$(echo'bHM='\|base64-d)` |
-
----
-
-## ⚙️ 配置文件
-
-`config/default.yaml`:
-
-```yaml
-scanner:
-  timeout: 10
-  max_concurrent: 10
-  delay_threshold: 4.0
-
-dir_scan:
-  enabled: true
-  threads: 10
-  wordlist: "config/wordlists/dirs.txt"
-  extensions:
-    - ".php"
-    - ".asp"
-    - ".jsp"
-    - ".html"
-
-param_extract:
-  enabled: true
-  param_wordlist: "config/wordlists/params.txt"
-
-domain:
-  restrict_to_root: true
-  blocked_domains:
-    - "localhost"
-    - "127.0.0.1"
-    - "*.gov.cn"
-```
-
----
-
 ## 🔧 作为库使用
 
 ```python
 import asyncio
-from rce_hawkeye import Scanner, Reporter
+from rce_hawkeye import Scanner, Reporter, ScanLevel
 from rce_hawkeye.scanner import ScanTarget
 from rce_hawkeye.payload_generator import ScanMode
 
 async def main():
-    scanner = Scanner(timeout=10, max_concurrent=5)
+    scanner = Scanner(
+        timeout=10, 
+        max_concurrent=20,
+        scan_level=ScanLevel.NORMAL
+    )
     scanner.set_scan_mode(ScanMode.ECHO)
     
     target = ScanTarget(
@@ -412,29 +288,6 @@ asyncio.run(main())
 
 ---
 
-## 📊 报告示例
-
-### JSON 格式
-
-```json
-{
-  "scan_time": "2024-01-15 10:30:00",
-  "total_targets": 10,
-  "vulnerabilities": [
-    {
-      "target": "http://example.com/api?cmd=test",
-      "parameter": "cmd",
-      "type": "echo_based",
-      "severity": "critical",
-      "payload": "; whoami;",
-      "evidence": "www-data"
-    }
-  ]
-}
-```
-
----
-
 ## ⚠️ 免责声明
 
 本工具仅供**授权的安全测试**使用。在未获得明确授权的情况下，禁止对他人系统进行扫描测试。使用本工具所产生的一切后果由使用者自行承担，与作者无关。
@@ -447,35 +300,19 @@ asyncio.run(main())
 
 ---
 
-## 🤝 贡献指南
-
-欢迎提交 Issue 和 Pull Request！
-
-### 贡献方式
-
-1. Fork 本仓库
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 提交 Pull Request
-
-### 代码规范
-
-- 使用 Python 3.8+ 语法
-- 遵循 PEP 8 代码风格
-- 添加必要的注释和文档
-
----
-
-## 📮 联系方式
-
-- Author: hbzw
-- QQ：980702918
-- Version: 0.0.3
-
----
-
 ## 📝 更新日志
+
+### v0.0.4 (2024-02-15)
+
+- ✨ 新增检测等级机制（快速/标准/深度/完全）
+- ✨ 新增WAF绕过Payload生成器（70+绕过技术）
+- ✨ 新增多语言支持（Node.js/Ruby/Go/Perl/Lua/ColdFusion）
+- ✨ 新增模板注入检测
+- ✨ 新增技术栈自动检测
+- 🚀 优化并发请求性能（并行基准响应获取）
+- 🐛 修复误报问题（增加基准响应对比）
+- 🐛 修复参数传递错误
+- 📝 完善文档和示例
 
 ### v0.0.3 (2024-02-14)
 
@@ -492,4 +329,3 @@ asyncio.run(main())
 <p align="center">
   <b>⭐ 如果这个项目对你有帮助，请给一个 Star ⭐</b>
 </p>
-

@@ -1,10 +1,11 @@
 """
 漏洞检测器模块
+增强检测逻辑，减少误报
 """
 
 import re
 import time
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
 from .payload_generator import Payload, PayloadType
@@ -34,13 +35,37 @@ class Vulnerability:
     timestamp: float = field(default_factory=time.time)
 
 
+@dataclass
+class BaselineResponse:
+    content: str
+    status_code: int
+    content_length: int
+    elapsed: float
+    headers: Dict[str, str] = field(default_factory=dict)
+
+
 class Detector:
-    """漏洞检测器"""
+    """漏洞检测器 - 增强版，减少误报"""
     
     def __init__(self, delay_threshold: float = 4.0, echo_markers: List[str] = None):
         self.delay_threshold = delay_threshold
         self.echo_markers = echo_markers or ["RCE_TEST_MARKER_12345", "VULN_DETECTED"]
         self.vulnerabilities: List[Vulnerability] = []
+        self._baselines: Dict[str, BaselineResponse] = {}
+    
+    def set_baseline(self, url: str, response: Dict[str, Any]):
+        """设置基准响应"""
+        self._baselines[url] = BaselineResponse(
+            content=response.get("content", ""),
+            status_code=response.get("status_code", 0),
+            content_length=len(response.get("content", "")),
+            elapsed=response.get("elapsed", 0),
+            headers=response.get("headers", {})
+        )
+    
+    def get_baseline(self, url: str) -> Optional[BaselineResponse]:
+        """获取基准响应"""
+        return self._baselines.get(url)
     
     def detect_time_based(self, baseline_time: float, response_time: float, 
                           payload: Payload) -> bool:
@@ -49,49 +74,112 @@ class Detector:
             return False
         
         time_diff = response_time - baseline_time
-        return time_diff >= self.delay_threshold
+        return time_diff >= max(self.delay_threshold, payload.expected_delay * 0.8)
     
-    def detect_echo_based(self, response_content: str, payload: Payload) -> bool:
-        """检测回显型漏洞"""
+    def detect_echo_based(self, response_content: str, payload: Payload,
+                         baseline_content: str = "") -> Tuple[bool, str]:
+        """检测回显型漏洞 - 返回是否检测到和证据"""
         if payload.expected_output:
-            return payload.expected_output in response_content
+            if payload.expected_output in response_content:
+                if baseline_content and payload.expected_output in baseline_content:
+                    return False, ""
+                return True, f"在响应中发现预期输出: {payload.expected_output}"
         
         for marker in self.echo_markers:
             if marker in response_content:
-                return True
+                if baseline_content and marker in baseline_content:
+                    continue
+                return True, f"在响应中发现回显标记: {marker}"
         
-        return False
+        return False, ""
     
-    def detect_command_output(self, response_content: str, baseline_content: str = "") -> bool:
-        """检测命令输出特征"""
+    def detect_command_output(self, response_content: str, 
+                              baseline_content: str = "") -> Tuple[bool, str]:
+        """检测命令输出特征 - 增强版，减少误报"""
         if not response_content:
-            return False
+            return False, ""
         
         if baseline_content:
             if response_content == baseline_content:
-                return False
+                return False, ""
+            
+            if abs(len(response_content) - len(baseline_content)) < 10:
+                content_diff = set(response_content.split()) - set(baseline_content.split())
+                if len(content_diff) < 3:
+                    return False, ""
         
-        command_output_patterns = [
-            (r'total\s+\d+\s+drwx', 'ls -la output'),
-            (r'drwx[rwx-]+\s+\d+\s+\w+\s+\w+', 'ls -la output'),
-            (r'-rw[rwx-]+\s+\d+\s+\w+\s+\w+', 'ls -la output'),
-            (r'uid=\d+\(.*\)\s+gid=\d+', 'id command output'),
-            (r'root:.*:0:0:', '/etc/passwd content'),
-            (r'bin/bash|bin/sh|bin/zsh', 'shell path'),
-            (r'Linux\s+\S+\s+\d+\.\d+', 'uname output'),
-            (r'Darwin\s+\S+\s+\d+\.\d+', 'macOS uname output'),
-            (r'Directory of\s+[A-Z]:', 'Windows dir output'),
-            (r'\d+/\d+/\d+\s+\d+:\d+\s+[AP]M', 'Windows date'),
-            (r'Volume Serial Number', 'Windows vol output'),
+        high_confidence_patterns = [
+            (r'uid=\d+\([^)]*\)\s+gid=\d+\([^)]*\)\s+groups=', 'id命令输出', 0.95),
+            (r'total\s+\d+\s+drwx[rwx-]+\s+\d+', 'ls -la输出', 0.90),
+            (r'drwx[rwx-]+\s+\d+\s+\w+\s+\w+\s+\d+\s+\w+\s+\d+\s+[\d:]+\s+\S+', 'ls -la详细输出', 0.90),
+            (r'-rw[rwx-]+\s+\d+\s+\w+\s+\w+\s+\d+\s+\w+\s+\d+\s+[\d:]+\s+\S+', 'ls -la文件输出', 0.90),
+            (r'root:[^:]*:\d+:\d+:', '/etc/passwd内容', 0.95),
+            (r'Directory of\s+[A-Z]:\\[^\n]+\n\n', 'Windows dir输出', 0.90),
+            (r'Volume Serial Number is [A-Z0-9-]+', 'Windows vol输出', 0.95),
+            (r'Linux\s+\S+\s+\d+\.\d+\.\d+', 'uname -a输出', 0.85),
+            (r'Darwin\s+\S+\s+\d+\.\d+\.\d+', 'macOS uname输出', 0.85),
         ]
         
-        for pattern, desc in command_output_patterns:
-            if re.search(pattern, response_content, re.IGNORECASE):
+        medium_confidence_patterns = [
+            (r'/bin/(ba)?sh', 'shell路径', 0.60),
+            (r'/usr/bin/\w+', '可执行文件路径', 0.50),
+            (r'/home/\w+/', '用户目录路径', 0.50),
+        ]
+        
+        for pattern, desc, confidence in high_confidence_patterns:
+            match = re.search(pattern, response_content, re.IGNORECASE)
+            if match:
+                if baseline_content:
+                    baseline_match = re.search(pattern, baseline_content, re.IGNORECASE)
+                    if baseline_match:
+                        continue
+                return True, f"发现高置信度命令输出特征: {desc}"
+        
+        low_confidence_patterns = [
+            (r'bin/bash', 'shell路径', 0.30),
+            (r'bin/sh', 'shell路径', 0.30),
+        ]
+        
+        for pattern, desc, confidence in low_confidence_patterns:
+            match = re.search(pattern, response_content, re.IGNORECASE)
+            if match:
                 if baseline_content and re.search(pattern, baseline_content, re.IGNORECASE):
                     continue
-                return True
+                
+                if len(response_content) < 500:
+                    continue
+                
+                return True, f"发现可能的命令输出特征: {desc}"
         
-        return False
+        return False, ""
+    
+    def detect_response_diff(self, response: Dict[str, Any], 
+                            baseline: BaselineResponse) -> Tuple[bool, str]:
+        """检测响应与基准的差异"""
+        content = response.get("content", "")
+        status_code = response.get("status_code", 0)
+        
+        if status_code != baseline.status_code:
+            return True, f"状态码变化: {baseline.status_code} -> {status_code}"
+        
+        content_len = len(content)
+        baseline_len = baseline.content_length
+        
+        if baseline_len > 0:
+            diff_ratio = abs(content_len - baseline_len) / baseline_len
+            if diff_ratio > 0.5:
+                return True, f"响应长度显著变化: {baseline_len} -> {content_len}"
+        
+        if content and baseline.content:
+            if content != baseline.content:
+                response_words = set(content.split())
+                baseline_words = set(baseline.content.split())
+                new_words = response_words - baseline_words
+                
+                if len(new_words) > 5:
+                    return True, f"响应内容有显著差异，新增内容: {list(new_words)[:5]}"
+        
+        return False, ""
     
     def detect_dns_based(self, dns_log: str, payload: Payload) -> bool:
         """检测DNS外带漏洞"""
@@ -111,11 +199,22 @@ class Detector:
     
     def analyze_response(self, response: Dict[str, Any], payload: Payload,
                         baseline_response: Dict[str, Any] = None) -> Optional[Vulnerability]:
-        """分析响应，检测漏洞"""
+        """分析响应，检测漏洞 - 增强版"""
+        target_url = response.get("url", "")
+        
+        baseline = self.get_baseline(target_url)
+        if not baseline and baseline_response:
+            baseline = BaselineResponse(
+                content=baseline_response.get("content", ""),
+                status_code=baseline_response.get("status_code", 0),
+                content_length=len(baseline_response.get("content", "")),
+                elapsed=baseline_response.get("elapsed", 0)
+            )
+        
         if response.get("error") == "Timeout":
             if payload.payload_type == PayloadType.TIME_BASED:
                 return self._create_vulnerability(
-                    target=response.get("url", ""),
+                    target=target_url,
                     parameter="",
                     payload=payload,
                     severity=Severity.HIGH,
@@ -125,10 +224,10 @@ class Detector:
             return None
         
         if payload.payload_type == PayloadType.TIME_BASED:
-            baseline_time = baseline_response.get("elapsed", 0) if baseline_response else 0
+            baseline_time = baseline.elapsed if baseline else 0
             if self.detect_time_based(baseline_time, response.get("elapsed", 0), payload):
                 return self._create_vulnerability(
-                    target=response.get("url", ""),
+                    target=target_url,
                     parameter="",
                     payload=payload,
                     severity=Severity.HIGH,
@@ -138,25 +237,27 @@ class Detector:
         
         if payload.payload_type in [PayloadType.ECHO_BASED, PayloadType.CODE_EXEC]:
             content = response.get("content", "")
-            baseline_content = baseline_response.get("content", "") if baseline_response else ""
+            baseline_content = baseline.content if baseline else ""
             
-            if self.detect_echo_based(content, payload):
+            detected, evidence = self.detect_echo_based(content, payload, baseline_content)
+            if detected:
                 return self._create_vulnerability(
-                    target=response.get("url", ""),
+                    target=target_url,
                     parameter="",
                     payload=payload,
                     severity=Severity.CRITICAL,
-                    evidence=f"在响应中发现预期输出: {payload.expected_output}",
+                    evidence=evidence,
                     exploitation="直接通过回显获取命令执行结果"
                 )
             
-            if self.detect_command_output(content, baseline_content):
+            detected, evidence = self.detect_command_output(content, baseline_content)
+            if detected:
                 return self._create_vulnerability(
-                    target=response.get("url", ""),
+                    target=target_url,
                     parameter="",
                     payload=payload,
                     severity=Severity.CRITICAL,
-                    evidence="在响应中发现命令执行输出特征",
+                    evidence=evidence,
                     exploitation="直接通过回显获取命令执行结果"
                 )
         
@@ -209,6 +310,7 @@ class Detector:
     def clear(self):
         """清空漏洞列表"""
         self.vulnerabilities.clear()
+        self._baselines.clear()
     
     def get_statistics(self) -> Dict[str, int]:
         """获取漏洞统计"""

@@ -16,7 +16,7 @@ from datetime import datetime
 from urllib.parse import urlparse
 
 from rce_hawkeye import Scanner, Reporter
-from rce_hawkeye.scanner import ScanTarget, ScanResult
+from rce_hawkeye.scanner import ScanTarget, ScanResult, ScanLevel
 from rce_hawkeye.detector import Severity
 from rce_hawkeye.traffic_parser import TrafficParser, HttpRequest
 from rce_hawkeye.payload_generator import ScanMode
@@ -26,7 +26,7 @@ from rce_hawkeye.dir_scanner import DirectoryScanner, DirScanConfig
 from rce_hawkeye.param_extractor import ParamExtractor, ParamConfig
 
 
-__version__ = "0.0.3"
+__version__ = "0.0.4"
 __author__ = "hbzw"
 
 
@@ -360,17 +360,19 @@ def ask_yes_no(question: str, default: bool = True) -> bool:
             return default
 
 
-def interactive_config(args) -> Tuple[ScanMode, bool, bool]:
+def interactive_config(args) -> Tuple[ScanMode, ScanLevel, bool, bool]:
     """交互式配置扫描模式"""
     do_dir_scan = args.dir_scan if hasattr(args, 'dir_scan') else False
     do_param_fuzz = args.param_fuzz if hasattr(args, 'param_fuzz') else False
     
     if args.no_interactive:
         if args.waf_bypass:
-            return ScanMode.WAF_BYPASS, do_dir_scan, do_param_fuzz
+            scan_mode = ScanMode.WAF_BYPASS
         elif args.echo:
-            return ScanMode.ECHO, do_dir_scan, do_param_fuzz
-        return ScanMode.HARMLESS, do_dir_scan, do_param_fuzz
+            scan_mode = ScanMode.ECHO
+        else:
+            scan_mode = ScanMode.HARMLESS
+        return scan_mode, ScanLevel.NORMAL, do_dir_scan, do_param_fuzz
     
     print("\n" + "=" * 50)
     print("扫描模式配置")
@@ -390,6 +392,30 @@ def interactive_config(args) -> Tuple[ScanMode, bool, bool]:
         print("\n已选择: 常规回显模式")
         scan_mode = ScanMode.ECHO
     
+    print("\n选择检测等级:")
+    print("  [1] 快速扫描 - 仅测试最关键的Payload（约10个/参数）")
+    print("  [2] 标准扫描 - 平衡速度和覆盖率（约30个/参数）[默认]")
+    print("  [3] 深度扫描 - 全面检测（约60个/参数）")
+    print("  [4] 完全扫描 - 测试所有Payload")
+    
+    level_choice = input("请选择 [1-4, 默认:2]: ").strip()
+    level_map = {
+        "1": ScanLevel.QUICK,
+        "2": ScanLevel.NORMAL,
+        "3": ScanLevel.DEEP,
+        "4": ScanLevel.EXHAUSTIVE,
+        "": ScanLevel.NORMAL
+    }
+    scan_level = level_map.get(level_choice, ScanLevel.NORMAL)
+    
+    level_names = {
+        ScanLevel.QUICK: "快速扫描",
+        ScanLevel.NORMAL: "标准扫描",
+        ScanLevel.DEEP: "深度扫描",
+        ScanLevel.EXHAUSTIVE: "完全扫描"
+    }
+    print(f"\n已选择: {level_names[scan_level]}")
+    
     if not do_dir_scan:
         do_dir_scan = ask_yes_no(
             "\n是否启用目录扫描？\n"
@@ -406,7 +432,7 @@ def interactive_config(args) -> Tuple[ScanMode, bool, bool]:
             default=False
         )
     
-    return scan_mode, do_dir_scan, do_param_fuzz
+    return scan_mode, scan_level, do_dir_scan, do_param_fuzz
 
 
 def print_progress(current: int, total: int, target: str):
@@ -692,7 +718,7 @@ async def dir_scan_and_extract(args, start_url: str, do_dir_scan: bool = False, 
     return found_urls, found_params, dir_results
 
 
-async def scan_async(args, scan_mode: ScanMode, do_dir_scan: bool = False, do_param_fuzz: bool = False):
+async def scan_async(args, scan_mode: ScanMode, scan_level: ScanLevel, do_dir_scan: bool = False, do_param_fuzz: bool = False):
     """异步扫描"""
     targets = []
     scan_targets = []
@@ -803,7 +829,8 @@ async def scan_async(args, scan_mode: ScanMode, do_dir_scan: bool = False, do_pa
         delay_threshold=args.delay_threshold,
         user_agent=args.user_agent,
         proxy=args.proxy,
-        verify_ssl=args.verify_ssl
+        verify_ssl=args.verify_ssl,
+        scan_level=scan_level
     )
     
     scanner.set_scan_mode(scan_mode)
@@ -817,8 +844,15 @@ async def scan_async(args, scan_mode: ScanMode, do_dir_scan: bool = False, do_pa
             ScanMode.ECHO: "常规回显",
             ScanMode.WAF_BYPASS: "WAF绕过"
         }
+        level_names = {
+            ScanLevel.QUICK: "快速扫描",
+            ScanLevel.NORMAL: "标准扫描",
+            ScanLevel.DEEP: "深度扫描",
+            ScanLevel.EXHAUSTIVE: "完全扫描"
+        }
         print(f"\n[*] 开始扫描 {len(scan_targets)} 个目标...")
         print(f"[*] 扫描模式: {mode_names.get(scan_mode, '未知')}")
+        print(f"[*] 检测等级: {level_names.get(scan_level, '未知')}")
         print(f"[*] 并发数: {args.concurrent}, 超时: {args.timeout}s")
         
         if domain_config.allowed_domains:
@@ -893,9 +927,9 @@ def main():
         print_banner()
     
     try:
-        scan_mode, do_dir_scan, do_param_fuzz = interactive_config(args)
+        scan_mode, scan_level, do_dir_scan, do_param_fuzz = interactive_config(args)
         
-        vulnerabilities = asyncio.run(scan_async(args, scan_mode, do_dir_scan, do_param_fuzz))
+        vulnerabilities = asyncio.run(scan_async(args, scan_mode, scan_level, do_dir_scan, do_param_fuzz))
         
         if any(v.severity in [Severity.CRITICAL, Severity.HIGH] for v in vulnerabilities):
             sys.exit(2)
