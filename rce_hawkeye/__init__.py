@@ -1,9 +1,9 @@
 """
 RCE HawkEye - 命令执行漏洞检测工具
-支持多种编程环境的智能检测
+借鉴sqlmap设计，专精于RCE漏洞检测
 """
 
-__version__ = "0.0.4"
+__version__ = "1.0.0"
 __author__ = "hbzw"
 
 from .scanner import Scanner, ScanTarget, ScanResult, ScanLevel
@@ -18,6 +18,8 @@ from .param_extractor import ParamExtractor, ParamConfig
 from .tech_detector import TechStackDetector, TechStack, DetectedTech
 from .intelligent_scanner import IntelligentScanner, IntelligentScanResult
 from .waf_bypass import WAFBypassGenerator, BypassPayload, WAFTechnique
+from .tamper import tamper_manager, TamperManager
+from .heuristic import HeuristicChecker, HeuristicResult, InjectionType
 
 __all__ = [
     "Scanner", "ScanTarget", "ScanResult", "ScanLevel",
@@ -29,5 +31,7 @@ __all__ = [
     "DirectoryScanner", "DirScanConfig", "ParamExtractor", "ParamConfig",
     "TechStackDetector", "TechStack", "DetectedTech",
     "IntelligentScanner", "IntelligentScanResult",
-    "WAFBypassGenerator", "BypassPayload", "WAFTechnique"
+    "WAFBypassGenerator", "BypassPayload", "WAFTechnique",
+    "tamper_manager", "TamperManager",
+    "HeuristicChecker", "HeuristicResult", "InjectionType"
 ]

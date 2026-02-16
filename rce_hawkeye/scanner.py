@@ -267,6 +267,19 @@ class Scanner:
         
         return None
     
+    def _report_progress(self, current: int, total: int, target_url: str, **kwargs):
+        """报告进度"""
+        if self._progress_callback:
+            try:
+                self._progress_callback(
+                    current=current,
+                    total=total,
+                    target_url=target_url,
+                    **kwargs
+                )
+            except Exception:
+                pass
+    
     def _filter_payloads_by_level(self, payloads: List[Payload]) -> List[Payload]:
         """根据检测等级过滤Payload"""
         config = SCAN_LEVEL_CONFIG[self.scan_level]
@@ -322,12 +335,19 @@ class Scanner:
         payloads = self.payload_generator.get_payloads_by_url(target.url, self._scan_mode)
         payloads = self._filter_payloads_by_level(payloads)
         
+        total_payloads = len(payloads) * len(params_to_test)
+        tested_payloads = 0
+        
+        self._report_progress(0, total_payloads, target.url, 
+                             tested_payloads=0, total_payloads=total_payloads, param='')
+        
         target_baseline = await self._fetch_baseline(target)
         self.detector.set_baseline(target.url, target_baseline)
         
         param_baselines = await self._fetch_baselines_parallel(target, params_to_test)
         
         tasks = []
+        task_info = []
         for param_name, param_value in params_to_test:
             baseline = param_baselines.get(param_name, target_baseline)
             for payload in payloads:
@@ -336,6 +356,7 @@ class Scanner:
                 
                 task = self._scan_parameter(target, param_name, param_value, payload, baseline)
                 tasks.append(task)
+                task_info.append((param_name, payload))
         
         batch_size = self.max_concurrent * 2
         for i in range(0, len(tasks), batch_size):
@@ -345,10 +366,18 @@ class Scanner:
             batch = tasks[i:i + batch_size]
             results = await asyncio.gather(*batch, return_exceptions=True)
             
-            for result in results:
+            for j, result in enumerate(results):
                 if isinstance(result, Vulnerability):
                     vulnerabilities.append(result)
                     self.detector.add_vulnerability(result)
+                
+                tested_payloads += 1
+                if task_info and i + j < len(task_info):
+                    param_name, _ = task_info[i + j]
+                    self._report_progress(tested_payloads, total_payloads, target.url,
+                                         tested_payloads=tested_payloads, 
+                                         total_payloads=total_payloads,
+                                         param=param_name)
         
         return vulnerabilities
     
@@ -372,7 +401,7 @@ class Scanner:
                     self._progress_callback(
                         current=i + 1,
                         total=total_targets,
-                        target=target.url
+                        target_url=target.url
                     )
                 
                 vulnerabilities = await self._scan_target(target)
