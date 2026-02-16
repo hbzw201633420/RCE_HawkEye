@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RCE HawkEye - Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/static/css/style.css?v=4">
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                <path d="M9 12l2 2 4-4"/>
+            </svg>
+            <h1>RCE HawkEye</h1>
+        </div>
+        
+        <nav>
+            <ul class="sidebar-nav">
+                <li>
+                    <a href="#" class="active" onclick="showSection('dashboard', event)">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7"/>
+                            <rect x="14" y="3" width="7" height="7"/>
+                            <rect x="14" y="14" width="7" height="7"/>
+                            <rect x="3" y="14" width="7" height="7"/>
+                        </svg>
+                        <span data-i18n="nav.dashboard">仪表板</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="showSection('scanner', event)">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"/>
+                            <path d="m21 21-4.35-4.35"/>
+                        </svg>
+                        <span data-i18n="nav.scanner">扫描器</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="showSection('monitoring', event)">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                        </svg>
+                        <span data-i18n="nav.monitoring">监控</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="showSection('reports', event)">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                        </svg>
+                        <span data-i18n="nav.reports">报告</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="showSection('settings', event)">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                        <span data-i18n="nav.settings">设置</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+    
+    <main class="main-content">
+        <div class="top-bar">
+            <div class="search-box">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="m21 21-4.35-4.35"/>
+                </svg>
+                <input type="text" placeholder="" data-i18n-placeholder="search.placeholder">
+            </div>
+            <div class="user-menu">
+                <select id="langSelector" onchange="changeLanguage(this.value)" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 8px 12px; color: #f8fafc; cursor: pointer; margin-right: 12px;">
+                    <option value="zh">中文</option>
+                    <option value="en">English</option>
+                </select>
+                <div style="position: relative;">
+                    <button class="notification-btn" onclick="toggleNotifications()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                        </svg>
+                        <span class="notification-badge" id="notificationBadge" style="display: none;"></span>
+                    </button>
+                    <div id="notificationDropdown" style="display: none; position: absolute; top: 45px; right: 0; width: 320px; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); z-index: 100;">
+                        <div style="padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-weight: 600;">通知</span>
+                            <button onclick="clearNotifications()" style="background: none; border: none; color: rgba(248,250,252,0.5); cursor: pointer; font-size: 12px;">清除全部</button>
+                        </div>
+                        <div id="notificationList" style="max-height: 300px; overflow-y: auto; padding: 8px;">
+                            <div style="text-align: center; padding: 20px; color: rgba(248,250,252,0.5);">暂无通知</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="user-avatar" onclick="toggleUserMenu()">A</div>
+                <div id="userDropdown" style="display: none; position: absolute; top: 45px; right: 20px; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); z-index: 100; min-width: 150px;">
+                    <div style="padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                        <div style="font-weight: 600;" id="currentUsername">admin</div>
+                        <div style="font-size: 12px; color: rgba(248,250,252,0.5);">管理员</div>
+                    </div>
+                    <a href="#" onclick="logout()" style="display: block; padding: 12px 16px; color: #f8fafc; text-decoration: none;">退出登录</a>
+                </div>
+            </div>
+        </div>
+        
+        <section id="dashboardSection">
+            <div class="stats-grid">
+                <div class="stat-card glass-card glass-card-hover">
+                    <div class="stat-card-icon green">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        </svg>
+                    </div>
+                    <div class="stat-card-value" id="totalScans">0</div>
+                    <div class="stat-card-label" data-i18n="stats.totalScans">总扫描次数</div>
+                </div>
+                <div class="stat-card glass-card glass-card-hover">
+                    <div class="stat-card-icon red">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                            <line x1="12" y1="9" x2="12" y2="13"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                    </div>
+                    <div class="stat-card-value" id="criticalVulns">0</div>
+                    <div class="stat-card-label" data-i18n="stats.criticalVulns">严重漏洞</div>
+                </div>
+                <div class="stat-card glass-card glass-card-hover">
+                    <div class="stat-card-icon yellow">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="12"/>
+                            <line x1="12" y1="16" x2="12.01" y2="16"/>
+                        </svg>
+                    </div>
+                    <div class="stat-card-value" id="highVulns">0</div>
+                    <div class="stat-card-label" data-i18n="stats.highVulns">高危漏洞</div>
+                </div>
+                <div class="stat-card glass-card glass-card-hover">
+                    <div class="stat-card-icon cyan">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                        </svg>
+                    </div>
+                    <div class="stat-card-value" id="targetsScanned">0</div>
+                    <div class="stat-card-label" data-i18n="stats.targetsScanned">已扫描目标</div>
+                </div>
+            </div>
+            
+            <div class="scan-section">
+                <div class="scan-panel glass-card">
+                    <div class="scan-panel-header">
+                        <h2 class="scan-panel-title" data-i18n="scan.newScan">新建扫描</h2>
+                        <span style="color: rgba(248, 250, 252, 0.5); font-size: 13px;">v1.0.0</span>
+                    </div>
+                    
+                    <div class="target-input-group">
+                        <label data-i18n="scan.targetUrl">目标 URL / IP</label>
+                        <div class="target-input-row">
+                            <input type="text" id="targetUrl" class="input-field" placeholder="" data-i18n-placeholder="scan.targetPlaceholder">
+                            <button class="btn-secondary" onclick="detectHttps()">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle;">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                </svg>
+                                HTTPS
+                            </button>
+                        </div>
+                        <div style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
+                            <button class="btn-secondary" onclick="showBatchScanModal()" style="padding: 6px 12px; font-size: 12px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle; margin-right: 4px;">
+                                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+                                </svg>
+                                批量扫描
+                            </button>
+                            <button class="btn-secondary" onclick="importUrlsFromFile()" style="padding: 6px 12px; font-size: 12px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle; margin-right: 4px;">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                    <polyline points="17 8 12 3 7 8"/>
+                                    <line x1="12" y1="3" x2="12" y2="15"/>
+                                </svg>
+                                导入文件
+                            </button>
+                            <input type="file" id="urlFileInput" accept=".txt,.csv" style="display: none;" onchange="handleFileImport(event)">
+                        </div>
+                    </div>
+                    
+                    <div class="target-input-group">
+                        <label data-i18n="scan.scanLevel">扫描等级</label>
+                        <div class="level-selector">
+                            <button class="level-btn" data-level="1" data-i18n="level.quick">快速</button>
+                            <button class="level-btn active" data-level="2" data-i18n="level.normal">标准</button>
+                            <button class="level-btn" data-level="3" data-i18n="level.deep">深度</button>
+                            <button class="level-btn" data-level="4" data-i18n="level.full">完全</button>
+                        </div>
+                    </div>
+                    
+                    <div class="target-input-group">
+                        <label data-i18n="scan.scanOptions">扫描选项</label>
+                        <div class="scan-options">
+                            <div class="scan-option">
+                                <input type="checkbox" id="optCrawl">
+                                <label for="optCrawl" data-i18n="option.crawl">网页爬虫</label>
+                            </div>
+                            <div class="scan-option">
+                                <input type="checkbox" id="optDirScan">
+                                <label for="optDirScan" data-i18n="option.dirScan">目录扫描</label>
+                            </div>
+                            <div class="scan-option">
+                                <input type="checkbox" id="optParamFuzz">
+                                <label for="optParamFuzz" data-i18n="option.paramFuzz">参数模糊测试</label>
+                            </div>
+                            <div class="scan-option">
+                                <input type="checkbox" id="optWafBypass">
+                                <label for="optWafBypass" data-i18n="option.wafBypass">WAF绕过</label>
+                            </div>
+                            <div class="scan-option">
+                                <input type="checkbox" id="optHarmless">
+                                <label for="optHarmless" data-i18n="option.harmless">无害化检测</label>
+                            </div>
+                            <div class="scan-option">
+                                <input type="checkbox" id="optHttps">
+                                <label for="optHttps" data-i18n="option.preferHttps">优先HTTPS</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="target-input-group">
+                        <label style="cursor: pointer;" onclick="toggleAdvanced()">
+                            <span data-i18n="scan.advanced">高级选项</span>
+                            <span id="advancedToggleIcon" style="margin-left: 8px;">▼</span>
+                        </label>
+                        <div id="advancedOptions" style="display: none; margin-top: 12px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                <div>
+                                    <label style="font-size: 12px; color: rgba(248,250,252,0.6);">HTTP Method</label>
+                                    <select id="advMethod" class="input-field" style="padding: 8px;">
+                                        <option value="GET">GET</option>
+                                        <option value="POST">POST</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="font-size: 12px; color: rgba(248,250,252,0.6);">并发数</label>
+                                    <input type="number" id="advConcurrent" class="input-field" value="10" min="1" max="100" style="padding: 8px;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 12px; color: rgba(248,250,252,0.6);">超时(秒)</label>
+                                    <input type="number" id="advTimeout" class="input-field" value="10" min="1" max="60" style="padding: 8px;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 12px; color: rgba(248,250,252,0.6);">延迟阈值(秒)</label>
+                                    <input type="number" id="advDelayThreshold" class="input-field" value="4" min="1" max="10" step="0.5" style="padding: 8px;">
+                                </div>
+                            </div>
+                            <div style="margin-top: 12px;">
+                                <label style="font-size: 12px; color: rgba(248,250,252,0.6);">代理服务器</label>
+                                <input type="text" id="advProxy" class="input-field" placeholder="http://127.0.0.1:8080" style="padding: 8px;">
+                            </div>
+                            <div style="margin-top: 12px;">
+                                <label style="font-size: 12px; color: rgba(248,250,252,0.6);">自定义请求头 (每行一个 Header: Value)</label>
+                                <textarea id="advHeaders" class="input-field" rows="3" placeholder="X-Forwarded-For: 127.0.0.1&#10;Authorization: Bearer token" style="padding: 8px;"></textarea>
+                            </div>
+                            <div style="margin-top: 12px;">
+                                <label style="font-size: 12px; color: rgba(248,250,252,0.6);">POST数据 (key1=value1&key2=value2)</label>
+                                <input type="text" id="advPostData" class="input-field" placeholder="username=admin&password=test" style="padding: 8px;">
+                            </div>
+                            <div style="margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                <div>
+                                    <label style="font-size: 12px; color: rgba(248,250,252,0.6);">爬虫深度</label>
+                                    <input type="number" id="advCrawlDepth" class="input-field" value="2" min="1" max="5" style="padding: 8px;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 12px; color: rgba(248,250,252,0.6);">最大页面数</label>
+                                    <input type="number" id="advCrawlPages" class="input-field" value="100" min="10" max="1000" style="padding: 8px;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button class="btn-primary" onclick="startScan()" id="startScanBtn" style="width: 100%; margin-top: 16px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+                            <polygon points="5 3 19 12 5 21 5 3"/>
+                        </svg>
+                        <span data-i18n="scan.startScan">开始扫描</span>
+                    </button>
+                    
+                    <div class="progress-section" id="progressSection" style="display: none;">
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+                        </div>
+                        <div class="progress-info">
+                            <span id="progressStatus" data-i18n="progress.initializing">初始化中...</span>
+                            <span id="progressPercent">0%</span>
+                        </div>
+                        <div id="scanDetails" style="margin-top: 12px; font-size: 12px; color: rgba(248,250,252,0.5);">
+                            <div id="crawlInfo" style="display: none;">爬取页面: <span id="crawlCount">0</span></div>
+                            <div id="dirInfo" style="display: none;">发现路径: <span id="dirCount">0</span></div>
+                            <div id="paramInfo" style="display: none;">发现参数: <span id="paramCount">0</span></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="results-panel glass-card">
+                    <div class="results-header">
+                        <h2 class="scan-panel-title" data-i18n="results.title">扫描结果</h2>
+                        <div class="results-tabs">
+                            <button class="results-tab active" data-filter="all" data-i18n="results.all">全部</button>
+                            <button class="results-tab" data-filter="critical" data-i18n="results.critical">严重</button>
+                            <button class="results-tab" data-filter="high" data-i18n="results.high">高危</button>
+                        </div>
+                    </div>
+                    <div id="exportButtons" style="display: none; margin-bottom: 12px;">
+                        <button class="btn-secondary" onclick="exportReport('json')" style="margin-right: 8px; padding: 6px 12px; font-size: 12px;">导出 JSON</button>
+                        <button class="btn-secondary" onclick="exportReport('html')" style="margin-right: 8px; padding: 6px 12px; font-size: 12px;">导出 HTML</button>
+                        <button class="btn-secondary" onclick="exportReport('md')" style="padding: 6px 12px; font-size: 12px;">导出 Markdown</button>
+                    </div>
+                    <div class="vulnerability-list" id="vulnerabilityList">
+                        <div style="text-align: center; padding: 40px; color: rgba(248, 250, 252, 0.4);">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 16px;">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.35-4.35"/>
+                            </svg>
+                            <p data-i18n="results.noResults">暂无扫描结果</p>
+                            <p style="font-size: 12px; margin-top: 8px;" data-i18n="results.startScan">开始新扫描以检测漏洞</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section id="scannerSection" style="display: none;">
+            <div class="glass-card" style="padding: 24px;">
+                <h2 class="scan-panel-title" style="margin-bottom: 20px;" data-i18n="nav.scanner">扫描器</h2>
+                <p style="color: rgba(248,250,252,0.6); margin-bottom: 16px;">使用仪表板页面开始新扫描，或查看下方的扫描状态。</p>
+                <div id="scannerStatus">
+                    <div class="glass-card" style="padding: 16px; margin-bottom: 12px; background: rgba(34, 197, 94, 0.1);">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 12px; height: 12px; border-radius: 50%; background: #22C55E; animation: pulse 2s infinite;"></div>
+                            <span>扫描器就绪</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="activeScansList"></div>
+            </div>
+        </section>
+        
+        <section id="monitoringSection" style="display: none;">
+            <div class="monitoring-grid">
+                <div class="chart-card glass-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title" data-i18n="monitoring.cpuUsage">CPU使用率</h3>
+                        <span style="color: var(--cta); font-size: 12px;" data-i18n="monitoring.realtime">实时</span>
+                    </div>
+                    <div class="chart-value" id="cpuValue">0%</div>
+                    <div class="chart-container">
+                        <canvas id="cpuChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card glass-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title" data-i18n="monitoring.memoryUsage">内存使用率</h3>
+                        <span style="color: var(--accent-cyan); font-size: 12px;" data-i18n="monitoring.realtime">实时</span>
+                    </div>
+                    <div class="chart-value" id="memoryValue">0%</div>
+                    <div class="chart-container">
+                        <canvas id="memoryChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card glass-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title" data-i18n="monitoring.networkTraffic">网络流量</h3>
+                        <span style="color: var(--accent-purple); font-size: 12px;">KB/s</span>
+                    </div>
+                    <div class="chart-value" id="networkValue">0 KB/s</div>
+                    <div class="chart-container">
+                        <canvas id="networkChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card glass-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title" data-i18n="monitoring.scanPerformance">扫描性能</h3>
+                        <span style="color: var(--accent-yellow); font-size: 12px;" data-i18n="monitoring.requestsPerSec">请求/秒</span>
+                    </div>
+                    <div class="chart-value" id="scanPerfValue">0 req/s</div>
+                    <div class="chart-container">
+                        <canvas id="scanPerfChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section id="reportsSection" style="display: none;">
+            <div class="glass-card" style="padding: 24px; margin-bottom: 20px;">
+                <h2 class="scan-panel-title" style="margin-bottom: 20px;">扫描历史</h2>
+                <div id="reportsList">
+                    <p style="color: rgba(248,250,252,0.5);">暂无扫描历史</p>
+                </div>
+            </div>
+            <div id="reportDetailSection" style="display: none;">
+                <div class="glass-card" style="padding: 24px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2 class="scan-panel-title">扫描详情</h2>
+                        <button class="btn-secondary" onclick="closeReportDetail()" style="padding: 8px 16px;">关闭</button>
+                    </div>
+                    <div id="reportDetailInfo" style="margin-bottom: 16px; padding: 16px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;">
+                            <div>
+                                <div style="font-size: 12px; color: rgba(248,250,252,0.5);">目标</div>
+                                <div id="detailTarget" style="font-weight: 600;">-</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 12px; color: rgba(248,250,252,0.5);">扫描时间</div>
+                                <div id="detailTime">-</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 12px; color: rgba(248,250,252,0.5);">漏洞数量</div>
+                                <div id="detailVulnCount" style="font-weight: 600;">-</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 12px; color: rgba(248,250,252,0.5);">状态</div>
+                                <div id="detailStatus">-</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="reportDetailExport" style="margin-bottom: 16px;">
+                        <button class="btn-secondary" onclick="exportReportFromDetail('json')" style="margin-right: 8px; padding: 8px 16px;">导出 JSON</button>
+                        <button class="btn-secondary" onclick="exportReportFromDetail('html')" style="margin-right: 8px; padding: 8px 16px;">导出 HTML</button>
+                        <button class="btn-secondary" onclick="exportReportFromDetail('md')" style="padding: 8px 16px;">导出 Markdown</button>
+                    </div>
+                    <h3 style="margin-bottom: 12px; font-size: 14px; color: rgba(248,250,252,0.7);">漏洞列表</h3>
+                    <div id="reportDetailVulns" class="vulnerability-list"></div>
+                </div>
+            </div>
+        </section>
+        
+        <section id="settingsSection" style="display: none;">
+            <div class="settings-grid">
+                <div class="settings-sidebar glass-card">
+                    <nav class="settings-nav">
+                            <a href="#" class="settings-nav-item active" data-settings-tab="general" onclick="switchSettingsTab('general', event)">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                                常规设置
+                            </a>
+                            <a href="#" class="settings-nav-item" data-settings-tab="scan" onclick="switchSettingsTab('scan', event)">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                                扫描设置
+                            </a>
+                            <a href="#" class="settings-nav-item" data-settings-tab="account" onclick="switchSettingsTab('account', event)">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                账户设置
+                            </a>
+                            <a href="#" class="settings-nav-item" data-settings-tab="data" onclick="switchSettingsTab('data', event)">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                                数据管理
+                            </a>
+                            <a href="#" class="settings-nav-item" data-settings-tab="about" onclick="switchSettingsTab('about', event)">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                                关于
+                            </a>
+                        </nav>
+                    </div>
+                    
+                    <div class="settings-content">
+                        <div id="settingsGeneral" class="settings-tab-content">
+                            <div class="glass-card" style="padding: 24px; margin-bottom: 20px;">
+                                <h2 class="scan-panel-title" style="margin-bottom: 24px;">常规设置</h2>
+                                
+                                <div class="settings-group">
+                                    <div class="setting-item" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                        <div>
+                                            <div style="font-weight: 500; margin-bottom: 4px;">界面语言</div>
+                                            <div style="font-size: 13px; color: rgba(248,250,252,0.5);">选择界面显示语言</div>
+                                        </div>
+                                        <select id="settingLanguage" class="setting-select" style="min-width: 120px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 10px 16px; color: #f8fafc;">
+                                            <option value="zh">中文</option>
+                                            <option value="en">English</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="setting-item" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                        <div>
+                                            <div style="font-weight: 500; margin-bottom: 4px;">扫描完成通知</div>
+                                            <div style="font-size: 13px; color: rgba(248,250,252,0.5);">扫描完成后发送浏览器通知</div>
+                                        </div>
+                                        <label class="toggle-switch" style="position: relative; display: inline-block; width: 50px; height: 26px;">
+                                            <input type="checkbox" id="settingNotify" checked style="opacity: 0; width: 0; height: 0;">
+                                            <span class="toggle-slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.1); border-radius: 26px; transition: 0.3s;"></span>
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="setting-item" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                        <div>
+                                            <div style="font-weight: 500; margin-bottom: 4px;">自动保存报告</div>
+                                            <div style="font-size: 13px; color: rgba(248,250,252,0.5);">扫描完成后自动保存报告到本地</div>
+                                        </div>
+                                        <label class="toggle-switch" style="position: relative; display: inline-block; width: 50px; height: 26px;">
+                                            <input type="checkbox" id="settingAutoSave" checked style="opacity: 0; width: 0; height: 0;">
+                                            <span class="toggle-slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.1); border-radius: 26px; transition: 0.3s;"></span>
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="setting-item" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 0;">
+                                        <div>
+                                            <div style="font-weight: 500; margin-bottom: 4px;">优先使用 HTTPS</div>
+                                            <div style="font-size: 13px; color: rgba(248,250,252,0.5);">自动检测并使用 HTTPS 协议</div>
+                                        </div>
+                                        <label class="toggle-switch" style="position: relative; display: inline-block; width: 50px; height: 26px;">
+                                            <input type="checkbox" id="settingPreferHttps" checked style="opacity: 0; width: 0; height: 0;">
+                                            <span class="toggle-slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.1); border-radius: 26px; transition: 0.3s;"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="settingsScan" class="settings-tab-content" style="display: none;">
+                            <div class="glass-card" style="padding: 24px; margin-bottom: 20px;">
+                                <h2 class="scan-panel-title" style="margin-bottom: 24px;">扫描设置</h2>
+                                
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                                    <div class="setting-item">
+                                        <label style="display: block; margin-bottom: 8px; font-weight: 500;">默认扫描等级</label>
+                                        <select id="settingDefaultLevel" class="setting-select" style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px 16px; color: #f8fafc;">
+                                            <option value="1">快速扫描</option>
+                                            <option value="2" selected>标准扫描</option>
+                                            <option value="3">深度扫描</option>
+                                            <option value="4">完全扫描</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="setting-item">
+                                        <label style="display: block; margin-bottom: 8px; font-weight: 500;">请求超时时间（秒）</label>
+                                        <input type="number" id="settingTimeout" value="10" min="5" max="60" style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px 16px; color: #f8fafc;">
+                                    </div>
+                                    
+                                    <div class="setting-item">
+                                        <label style="display: block; margin-bottom: 8px; font-weight: 500;">并发线程数</label>
+                                        <input type="number" id="settingConcurrent" value="10" min="1" max="50" style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px 16px; color: #f8fafc;">
+                                    </div>
+                                    
+                                    <div class="setting-item">
+                                        <label style="display: block; margin-bottom: 8px; font-weight: 500;">延迟阈值（秒）</label>
+                                        <input type="number" id="settingDelayThreshold" value="4" min="1" max="30" step="0.5" style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px 16px; color: #f8fafc;">
+                                    </div>
+                                </div>
+                                
+                                <div style="margin-top: 24px;">
+                                    <div class="setting-item">
+                                        <label style="display: block; margin-bottom: 8px; font-weight: 500;">代理设置</label>
+                                        <input type="text" id="settingProxy" placeholder="http://127.0.0.1:8080" style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px 16px; color: #f8fafc;">
+                                    </div>
+                                </div>
+                                
+                                <div style="margin-top: 24px;">
+                                    <div class="setting-item">
+                                        <label style="display: block; margin-bottom: 8px; font-weight: 500;">自定义请求头</label>
+                                        <textarea id="settingHeaders" placeholder="User-Agent: Mozilla/5.0..." style="width: 100%; height: 80px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px 16px; color: #f8fafc; font-family: monospace; resize: vertical;"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="settingsAccount" class="settings-tab-content" style="display: none;">
+                            <div class="glass-card" style="padding: 24px; margin-bottom: 20px;">
+                                <h2 class="scan-panel-title" style="margin-bottom: 24px;">账户设置</h2>
+                                
+                                <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                    <div style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #22C55E, #16A34A); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold;">A</div>
+                                    <div>
+                                        <div style="font-size: 18px; font-weight: 600;" id="settingUsername">admin</div>
+                                        <div style="color: rgba(248,250,252,0.5);">管理员</div>
+                                    </div>
+                                </div>
+                                
+                                <div style="max-width: 400px;">
+                                    <h3 style="margin-bottom: 16px; font-size: 14px; color: rgba(248,250,252,0.7);">修改密码</h3>
+                                    
+                                    <div style="margin-bottom: 16px;">
+                                        <label style="display: block; margin-bottom: 8px; font-weight: 500;">当前密码</label>
+                                        <input type="password" id="settingCurrentPassword" placeholder="输入当前密码" style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px 16px; color: #f8fafc;">
+                                    </div>
+                                    
+                                    <div style="margin-bottom: 16px;">
+                                        <label style="display: block; margin-bottom: 8px; font-weight: 500;">新密码</label>
+                                        <input type="password" id="settingNewPassword" placeholder="输入新密码（至少6位）" style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px 16px; color: #f8fafc;">
+                                    </div>
+                                    
+                                    <div style="margin-bottom: 16px;">
+                                        <label style="display: block; margin-bottom: 8px; font-weight: 500;">确认新密码</label>
+                                        <input type="password" id="settingConfirmPassword" placeholder="再次输入新密码" style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px 16px; color: #f8fafc;">
+                                    </div>
+                                    
+                                    <button class="btn-primary" onclick="changePassword()" style="background: linear-gradient(135deg, #22C55E, #16A34A); border: none; padding: 12px 24px; border-radius: 8px; color: white; font-weight: 600; cursor: pointer;">修改密码</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="settingsData" class="settings-tab-content" style="display: none;">
+                            <div class="glass-card" style="padding: 24px; margin-bottom: 20px;">
+                                <h2 class="scan-panel-title" style="margin-bottom: 24px;">数据管理</h2>
+                                
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                                    <div class="data-action-card" style="padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                                            <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(34, 197, 94, 0.2); display: flex; align-items: center; justify-content: center;">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                            </div>
+                                            <div style="font-weight: 600;">导出报告</div>
+                                        </div>
+                                        <button class="btn-secondary" onclick="exportAllReports()" style="width: 100%; padding: 8px;">导出</button>
+                                    </div>
+                                    
+                                    <div class="data-action-card" style="padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                                            <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(245, 158, 11, 0.2); display: flex; align-items: center; justify-content: center;">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                            </div>
+                                            <div style="font-weight: 600;">清除历史</div>
+                                        </div>
+                                        <button class="btn-secondary" onclick="clearScanHistory()" style="width: 100%; padding: 8px;">清除</button>
+                                    </div>
+                                    
+                                    <div class="data-action-card" style="padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                                            <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(239, 68, 68, 0.2); display: flex; align-items: center; justify-content: center;">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                                            </div>
+                                            <div style="font-weight: 600; color: #EF4444;">清除所有</div>
+                                        </div>
+                                        <button class="btn-secondary" onclick="clearAllData()" style="width: 100%; padding: 8px; color: #EF4444;">清除</button>
+                                    </div>
+                                </div>
+                                
+                                <div style="margin-top: 24px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px;">
+                                    <h3 style="margin-bottom: 16px; font-size: 14px;">存储统计</h3>
+                                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;">
+                                        <div style="text-align: center;">
+                                            <div style="font-size: 24px; font-weight: 600; color: #22C55E;" id="statsTotalScans">0</div>
+                                            <div style="font-size: 12px; color: rgba(248,250,252,0.5);">总扫描</div>
+                                        </div>
+                                        <div style="text-align: center;">
+                                            <div style="font-size: 24px; font-weight: 600; color: #EF4444;" id="statsTotalVulns">0</div>
+                                            <div style="font-size: 12px; color: rgba(248,250,252,0.5);">漏洞</div>
+                                        </div>
+                                        <div style="text-align: center;">
+                                            <div style="font-size: 24px; font-weight: 600; color: #F59E0B;" id="statsHistoryCount">0</div>
+                                            <div style="font-size: 12px; color: rgba(248,250,252,0.5);">历史</div>
+                                        </div>
+                                        <div style="text-align: center;">
+                                            <div style="font-size: 24px; font-weight: 600; color: #06B6D4;" id="statsActiveScans">0</div>
+                                            <div style="font-size: 12px; color: rgba(248,250,252,0.5);">活跃</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="settingsAbout" class="settings-tab-content" style="display: none;">
+                            <div class="glass-card" style="padding: 24px; margin-bottom: 20px;">
+                                <h2 class="scan-panel-title" style="margin-bottom: 24px;">关于</h2>
+                                
+                                <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+                                    <div style="width: 64px; height: 64px; border-radius: 12px; background: linear-gradient(135deg, #22C55E, #16A34A); display: flex; align-items: center; justify-content: center; font-size: 28px;">🦅</div>
+                                    <div>
+                                        <div style="font-size: 20px; font-weight: 600;">RCE HawkEye</div>
+                                        <div style="color: rgba(248,250,252,0.5);">远程代码执行漏洞扫描器</div>
+                                        <div style="display: flex; gap: 8px; margin-top: 8px;">
+                                            <span style="padding: 4px 10px; background: rgba(34, 197, 94, 0.2); border-radius: 16px; font-size: 11px; color: #22C55E;">v1.0.0</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div style="padding: 16px; background: rgba(0,0,0,0.2); border-radius: 12px; margin-bottom: 16px;">
+                                    <p style="color: rgba(248,250,252,0.7); font-size: 13px; line-height: 1.6;">
+                                        RCE HawkEye 是一款专业的远程代码执行漏洞扫描工具，支持多种检测模式和Payload类型。
+                                    </p>
+                                </div>
+                                
+                                <div style="text-align: center; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.05);">
+                                    <a href="https://github.com/hbzw201633420/RCE_HawkEye" target="_blank" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: rgba(255,255,255,0.05); border-radius: 8px; color: #f8fafc; text-decoration: none; font-size: 13px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                                        GitHub
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 20px; display: flex; gap: 12px; justify-content: flex-end;">
+                            <button class="btn-secondary" onclick="resetSettings()" style="padding: 10px 20px;">恢复默认</button>
+                            <button class="btn-primary" onclick="saveSettings()" style="background: linear-gradient(135deg, #22C55E, #16A34A); border: none; padding: 10px 20px; border-radius: 8px; color: white; font-weight: 600; cursor: pointer;">保存设置</button>
+                        </div>
+                    </div>
+                </div>
+        </section>
+    </main>
+    
+    <div id="batchScanModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center;">
+        <div class="glass-card" style="width: 600px; max-height: 80vh; overflow-y: auto; padding: 24px; margin: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 class="scan-panel-title">批量扫描</h2>
+                <button onclick="closeBatchScanModal()" style="background: none; border: none; color: rgba(248,250,252,0.6); cursor: pointer; font-size: 24px;">&times;</button>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; margin-bottom: 8px; color: rgba(248,250,252,0.7);">输入多个目标URL（每行一个）</label>
+                <textarea id="batchUrls" style="width: 100%; height: 200px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; color: #f8fafc; font-family: monospace; font-size: 13px; resize: vertical;" placeholder="http://example1.com&#10;http://example2.com&#10;http://example3.com"></textarea>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                    <div class="scan-option">
+                        <input type="checkbox" id="batchOptCrawl">
+                        <label for="batchOptCrawl">网页爬虫</label>
+                    </div>
+                    <div class="scan-option">
+                        <input type="checkbox" id="batchOptDirScan">
+                        <label for="batchOptDirScan">目录扫描</label>
+                    </div>
+                    <div class="scan-option">
+                        <input type="checkbox" id="batchOptParamFuzz">
+                        <label for="batchOptParamFuzz">参数模糊测试</label>
+                    </div>
+                    <div class="scan-option">
+                        <input type="checkbox" id="batchOptHarmless">
+                        <label for="batchOptHarmless">无害化检测</label>
+                    </div>
+                </div>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; margin-bottom: 8px; color: rgba(248,250,252,0.7);">扫描等级</label>
+                <div class="level-selector" style="display: flex; gap: 8px;">
+                    <button class="level-btn" data-batch-level="1">快速</button>
+                    <button class="level-btn active" data-batch-level="2">标准</button>
+                    <button class="level-btn" data-batch-level="3">深度</button>
+                    <button class="level-btn" data-batch-level="4">完全</button>
+                </div>
+            </div>
+            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                <button class="btn-secondary" onclick="closeBatchScanModal()">取消</button>
+                <button class="btn-primary" onclick="startBatchScan()" style="background: linear-gradient(135deg, #22C55E, #16A34A); border: none; padding: 10px 24px; border-radius: 8px; color: white; font-weight: 600; cursor: pointer;">
+                    开始批量扫描
+                </button>
+            </div>
+            <div id="batchScanProgress" style="display: none; margin-top: 16px; padding: 16px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span id="batchProgressText">准备中...</span>
+                    <span id="batchProgressPercent">0%</span>
+                </div>
+                <div class="progress-bar-container" style="height: 8px;">
+                    <div id="batchProgressBar" class="progress-bar" style="width: 0%;"></div>
+                </div>
+                <div id="batchScanResults" style="margin-top: 12px; max-height: 200px; overflow-y: auto;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/js/i18n.js"></script>
+    <script src="/static/js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var savedLang = localStorage.getItem('hawkeye_lang') || 'zh';
+            document.getElementById('langSelector').value = savedLang;
+        });
+        
+        function changeLanguage(lang) {
+            setLanguage(lang);
+        }
+        
+        function toggleAdvanced() {
+            var adv = document.getElementById('advancedOptions');
+            var icon = document.getElementById('advancedToggleIcon');
+            if (adv.style.display === 'none') {
+                adv.style.display = 'block';
+                icon.textContent = '▲';
+            } else {
+                adv.style.display = 'none';
+                icon.textContent = '▼';
+            }
+        }
+    </script>
+</body>
+</html>

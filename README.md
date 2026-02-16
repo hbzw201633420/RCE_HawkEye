@@ -1,7 +1,7 @@
 # RCE HawkEye (RCE鹰眼)
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.0.5-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.0.0-blue.svg" alt="Version">
   <img src="https://img.shields.io/badge/python-3.8+-green.svg" alt="Python">
   <img src="https://img.shields.io/badge/license-MIT-orange.svg" alt="License">
   <img src="https://img.shields.io/badge/author-hbzw-red.svg" alt="Author">
@@ -45,7 +45,7 @@
 ### 安装
 
 ```bash
-git clone https://github.com/hbzw/RCE_HawkEye.git
+git clone https://github.com/hbzw201633420/RCE_HawkEye.git
 cd RCE_HawkEye
 pip install -r requirements.txt
 ```
@@ -205,6 +205,49 @@ print(result.evidence)        # "发现命令注入特征: id命令输出"
 
 ---
 
+## 🖥️ Web 界面
+
+RCE HawkEye 提供现代化的 Web 界面，采用 Glassmorphism 设计风格。
+
+### 启动 Web 服务
+
+```bash
+# 安装额外依赖
+pip install flask flask-cors psutil requests
+
+# 启动 Web 服务
+cd web
+python app.py
+
+# 访问 http://localhost:5000
+# 默认账号: admin / admin123
+```
+
+### Web 界面功能
+
+| 功能 | 描述 |
+|------|------|
+| **登录页面** | 表单验证、记住我功能、忘记密码链接 |
+| **扫描仪表板** | 目标输入、扫描配置、实时进度、结果展示 |
+| **性能监控** | CPU、内存、网络流量实时图表 |
+| **报告导出** | JSON/HTML/Markdown 多格式导出 |
+
+### 界面预览
+
+```
+┌─────────────────────────────────────────────────────┐
+│  🔐 RCE HawkEye - Login                             │
+│  ┌─────────────────────────────────────────────┐    │
+│  │  Username: [________________]                │    │
+│  │  Password: [________________]                │    │
+│  │  ☐ Remember me    Forgot password?          │    │
+│  │  [        Sign In        ]                   │    │
+│  └─────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🌐 多语言代码执行检测
 
 | 语言 | URL 后缀 | 检测函数 |
@@ -303,6 +346,35 @@ asyncio.run(main())
 
 ## 📝 更新日志
 
+### v1.0.0 (2026-02-16)
+
+**🎉 首个正式版本发布**
+
+**Web界面增强**
+
+- � **全新设置页面** - 5个设置标签（常规/扫描/账户/数据/关于）
+- 📦 **批量扫描功能** - 支持文件导入和多URL输入
+- 🔔 **通知系统** - Toast通知和通知下拉面板
+- 👤 **用户菜单** - 下拉菜单和退出登录功能
+- 📊 **存储统计** - 实时显示扫描数据统计
+
+**Bug修复**
+- 🐛 修复导出功能缺少参数问题
+- 🐛 修复HTTP/HTTPS协议转换问题（非标准端口）
+- 🐛 修复目标不可达时无限扫描问题
+- 🐛 修复showSection函数事件处理问题
+- 🐛 修复设置页面布局问题
+
+**功能完善**
+- ✨ 目标可达性预检测
+- ✨ 扫描结果自动生成报告
+- ✨ 多格式报告导出（JSON/HTML/Markdown）
+
+**统计数据**
+- 📊 Payload总数: 200+
+- 🛡️ Tamper脚本: 50+
+- 🌐 支持语言: 中文/英文
+
 ### v0.0.5 (2024-02-16)
 
 - ✨ 新增 Tamper 插件系统（50+脚本，借鉴sqlmap）
@@ -310,6 +382,10 @@ asyncio.run(main())
 - ✨ 新增启发式检测模块（智能识别注入点）
 - ✨ 支持域名和IP直接扫描（无需http://前缀）
 - ✨ 支持HTTPS自动检测和优先使用
+- ✨ 新增Web界面（Glassmorphism风格）
+  - 登录页面（表单验证、记住我功能）
+  - 扫描器仪表板（实时进度、结果展示）
+  - 性能监控（CPU、内存、网络实时图表）
 - 🐛 修复tamper模块语法错误
 - 📊 Payload总数: 200+
 - 🛡️ Tamper脚本: 50+

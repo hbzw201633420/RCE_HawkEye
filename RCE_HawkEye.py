@@ -24,9 +24,10 @@ from rce_hawkeye.crawler import WebCrawler, CrawledPage
 from rce_hawkeye.config import ConfigManager, DomainConfig
 from rce_hawkeye.dir_scanner import DirectoryScanner, DirScanConfig
 from rce_hawkeye.param_extractor import ParamExtractor, ParamConfig
+from rce_hawkeye.utils import normalize_target, get_preferred_url, parse_target
 
 
-__version__ = "0.0.4"
+__version__ = "1.0.0"
 __author__ = "hbzw"
 
 
@@ -258,6 +259,19 @@ def parse_args():
     )
     
     parser.add_argument(
+        "--prefer-https",
+        action="store_true",
+        default=True,
+        help="优先使用HTTPS协议（自动检测HTTPS支持）"
+    )
+    
+    parser.add_argument(
+        "--no-https",
+        action="store_true",
+        help="禁用HTTPS自动检测"
+    )
+    
+    parser.add_argument(
         "--no-interactive",
         action="store_true",
         help="非交互模式（跳过所有询问）"
@@ -435,9 +449,10 @@ def interactive_config(args) -> Tuple[ScanMode, ScanLevel, bool, bool]:
     return scan_mode, scan_level, do_dir_scan, do_param_fuzz
 
 
-def print_progress(current: int, total: int, target: str):
+def print_progress(current: int, total: int, target: str = '', **kwargs):
     """打印扫描进度"""
-    print(f"\r[*] 扫描进度: {current}/{total} - {target[:60]}", end="", flush=True)
+    target_url = kwargs.get('target_url', target)
+    print(f"\r[*] 扫描进度: {current}/{total} - {str(target_url)[:60]}", end="", flush=True)
 
 
 def print_results(results: List[ScanResult], verbose: bool = False):
@@ -732,11 +747,26 @@ async def scan_async(args, scan_mode: ScanMode, scan_level: ScanLevel, do_dir_sc
         domain_config.blocked_domains = [d.strip() for d in args.block_domains.split(",")]
     
     if args.url:
-        targets.append(args.url)
+        normalized_url = normalize_target(args.url)
+        prefer_https = args.prefer_https and not args.no_https
+        if prefer_https:
+            normalized_url = get_preferred_url(normalized_url, prefer_https=True, timeout=args.timeout)
+        targets.append(normalized_url)
+        if not args.quiet:
+            target_info = parse_target(normalized_url)
+            print(f"[*] 目标: {normalized_url}")
+            print(f"    主机: {target_info['host']}")
+            print(f"    端口: {target_info['port']}")
+            print(f"    协议: {target_info['scheme']}")
     
     if args.file:
         file_targets = load_targets_from_file(args.file)
-        targets.extend(file_targets)
+        prefer_https = args.prefer_https and not args.no_https
+        for t in file_targets:
+            normalized = normalize_target(t)
+            if prefer_https:
+                normalized = get_preferred_url(normalized, prefer_https=True, timeout=args.timeout)
+            targets.append(normalized)
     
     if args.raw_traffic:
         parser = TrafficParser()
@@ -749,12 +779,13 @@ async def scan_async(args, scan_mode: ScanMode, scan_level: ScanLevel, do_dir_sc
             scan_targets.append(convert_http_request_to_target(req))
     
     if args.url:
+        target_url = normalized_url
         if args.crawl:
-            crawled_targets = await crawl_and_scan(args, None, args.url, domain_config)
+            crawled_targets = await crawl_and_scan(args, None, target_url, domain_config)
             scan_targets.extend(crawled_targets)
         
         if do_dir_scan or do_param_fuzz:
-            found_urls, found_params, dir_results = await dir_scan_and_extract(args, args.url, do_dir_scan, do_param_fuzz)
+            found_urls, found_params, dir_results = await dir_scan_and_extract(args, target_url, do_dir_scan, do_param_fuzz)
             
             for url in found_urls:
                 if url not in [t.url for t in scan_targets]:
@@ -779,7 +810,7 @@ async def scan_async(args, scan_mode: ScanMode, scan_level: ScanLevel, do_dir_sc
                     param_wordlist.remove(p)
                     param_wordlist.insert(0, p)
             
-            urls_to_fuzz = [args.url]
+            urls_to_fuzz = [target_url]
             if found_urls:
                 urls_to_fuzz.extend(found_urls)
             
@@ -798,9 +829,9 @@ async def scan_async(args, scan_mode: ScanMode, scan_level: ScanLevel, do_dir_sc
             headers = parse_headers(args.header) if args.header else {}
             post_data = parse_post_data(args.data) if args.data else {}
             
-            if args.url not in [t.url for t in scan_targets]:
+            if target_url not in [t.url for t in scan_targets]:
                 scan_targets.append(ScanTarget(
-                    url=args.url,
+                    url=target_url,
                     method=args.method,
                     data=post_data.copy(),
                     headers=headers.copy()

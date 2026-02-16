@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RCE HawkEye - Login</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .lang-selector {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+        .lang-selector select {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(248, 250, 252, 0.1);
+            border-radius: 6px;
+            padding: 8px 12px;
+            color: var(--text);
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .lang-selector select:focus {
+            outline: none;
+            border-color: var(--cta);
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="lang-selector">
+            <select id="langSelector" onchange="changeLanguage(this.value)">
+                <option value="zh">中文</option>
+                <option value="en">English</option>
+            </select>
+        </div>
+        
+        <div class="login-card glass-card">
+            <div class="login-logo">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    <path d="M9 12l2 2 4-4"/>
+                </svg>
+                <h1>RCE HawkEye</h1>
+                <p data-i18n="app.desc">命令执行漏洞自动化检测工具</p>
+            </div>
+            
+            <div class="error-message" id="errorMessage">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                <span id="errorText" data-i18n="login.error">用户名或密码错误</span>
+            </div>
+            
+            <form class="login-form" id="loginForm" onsubmit="return handleLogin(event)">
+                <div class="form-group">
+                    <label for="username" data-i18n="login.username">用户名 / 邮箱</label>
+                    <div class="input-icon-wrapper">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        <input type="text" id="username" name="username" class="input-field" 
+                               data-i18n-placeholder="login.usernamePlaceholder" 
+                               placeholder="请输入用户名或邮箱" required autocomplete="username">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password" data-i18n="login.password">密码</label>
+                    <div class="input-icon-wrapper">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                        <input type="password" id="password" name="password" class="input-field" 
+                               data-i18n-placeholder="login.passwordPlaceholder" 
+                               placeholder="请输入密码" required autocomplete="current-password">
+                    </div>
+                </div>
+                
+                <div class="form-options">
+                    <label class="remember-me">
+                        <input type="checkbox" id="rememberMe" name="rememberMe">
+                        <span data-i18n="login.remember">记住我</span>
+                    </label>
+                    <a href="#" class="forgot-password" onclick="showForgotPassword()" data-i18n="login.forgot">忘记密码?</a>
+                </div>
+                
+                <button type="submit" class="btn-primary login-btn" id="loginBtn">
+                    <span id="loginBtnText" data-i18n="login.btn">登 录</span>
+                </button>
+            </form>
+            
+            <div class="login-footer">
+                <p>RCE HawkEye v1.0.0 | <a href="https://github.com/hbzw201633420/RCE_HawkEye" target="_blank">GitHub</a></p>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/js/i18n.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('langSelector').value = currentLang;
+        });
+        
+        function changeLanguage(lang) {
+            setLanguage(lang);
+        }
+        
+        function handleLogin(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const rememberMe = document.getElementById('rememberMe').checked;
+            const loginBtn = document.getElementById('loginBtn');
+            const loginBtnText = document.getElementById('loginBtnText');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            loginBtn.disabled = true;
+            loginBtnText.innerHTML = '<span class="loading-spinner"></span>' + t('login.signing');
+            errorMessage.classList.remove('show');
+            
+            fetch('/api/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    username: username,
+                    password: password,
+                    rememberMe: rememberMe
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = '/dashboard';
+                } else {
+                    showError(data.message || t('login.error'));
+                    loginBtn.disabled = false;
+                    loginBtnText.textContent = t('login.btn');
+                }
+            })
+            .catch(error => {
+                showError(t('login.errorConnection'));
+                loginBtn.disabled = false;
+                loginBtnText.textContent = t('login.btn');
+            });
+            
+            return false;
+        }
+        
+        function showError(message) {
+            const errorMessage = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            errorText.textContent = message;
+            errorMessage.classList.add('show');
+        }
+        
+        function showForgotPassword() {
+            alert(getCurrentLang() === 'zh' ? '请联系管理员重置密码。' : 'Please contact administrator to reset your password.');
+        }
+        
+        document.getElementById('username').focus();
+    </script>
+</body>
+</html>
