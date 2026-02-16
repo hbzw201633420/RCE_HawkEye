@@ -1,21 +1,22 @@
 # RCE HawkEye (RCE鹰眼)
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.0.4-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/version-0.0.5-blue.svg" alt="Version">
   <img src="https://img.shields.io/badge/python-3.8+-green.svg" alt="Python">
   <img src="https://img.shields.io/badge/license-MIT-orange.svg" alt="License">
   <img src="https://img.shields.io/badge/author-hbzw-red.svg" alt="Author">
 </p>
 
 <p align="center">
-  <b>命令执行漏洞自动化检测工具</b>
+  <b>命令执行漏洞自动化检测工具</b><br>
+  <sub>借鉴 sqlmap 设计，专精于 RCE 漏洞检测</sub>
 </p>
 
 ---
 
 ## 📖 项目简介
 
-**RCE HawkEye（RCE鹰眼）** 是一款专业的命令执行漏洞自动化检测工具，能够对目标系统或应用程序的输入点进行自动化扫描，识别可能存在的命令注入和代码执行风险。
+**RCE HawkEye（RCE鹰眼）** 是一款专业的命令执行漏洞自动化检测工具，借鉴 sqlmap 的优秀设计，专精于 RCE 漏洞检测。
 
 ### ✨ 核心特性
 
@@ -24,14 +25,13 @@
 - 🕷️ **智能爬虫** - 自动爬取网站路径和参数，发现隐藏的注入点
 - 📂 **目录扫描** - 集成字典扫描，发现隐藏目录和敏感文件
 - 🎯 **参数模糊测试** - 使用字典发现隐藏参数，支持 GET/POST 双模式
-- 🔧 **交互式选择** - 目录扫描后可按状态码或通配符选择要测试的路径
 - 🎯 **多种检测模式** - 无害化检测、常规回显检测、WAF 绕过检测
-- 📊 **检测等级** - 快速/标准/深度/完全四级检测，平衡速度与覆盖率
-- 🛡️ **WAF绕过** - 支持70+种WAF绕过技术，包括编码、混淆、变异等
+- 📊 **Level/Risk机制** - 5级检测深度 + 3级风险控制（借鉴sqlmap）
+- 🛡️ **Tamper插件** - 50+种Payload变形脚本（借鉴sqlmap）
+- 🔬 **启发式检测** - 智能识别注入点特征
+- 🛡️ **WAF绕过** - 支持70+种WAF绕过技术
 - 📦 **流量包解析** - 支持从文本文件解析 HTTP 流量包进行检测
-- 📊 **详细报告** - JSON/HTML/Markdown 多格式报告，包含完整响应内容
-- ⚙️ **灵活配置** - 支持域名白名单/黑名单、自定义字典等配置
-- 🔒 **安全测试** - 无害化模式使用时间盲注，不执行实际命令
+- 📊 **详细报告** - JSON/HTML/Markdown 多格式报告
 
 ---
 
@@ -45,11 +45,8 @@
 ### 安装
 
 ```bash
-# 克隆项目
 git clone https://github.com/hbzw/RCE_HawkEye.git
 cd RCE_HawkEye
-
-# 安装依赖
 pip install -r requirements.txt
 ```
 
@@ -94,21 +91,8 @@ python RCE_HawkEye.py -u "http://example.com" -c 20 --no-interactive
 | 参数 | 说明 |
 |------|------|
 | `--crawl` | 启用网页爬虫 |
-| `--crawl-depth` | 爬虫深度 (默认: 2) |
-| `--crawl-pages` | 最大爬取页面数 (默认: 100) |
 | `--dir-scan` | 启用目录扫描 |
-| `--dir-wordlist` | 目录扫描字典文件 |
-| `--dir-threads` | 目录扫描线程数 (默认: 10) |
 | `--param-fuzz` | 启用参数模糊测试 |
-| `--param-wordlist` | 参数模糊测试字典文件 |
-
-#### 域名控制
-
-| 参数 | 说明 |
-|------|------|
-| `--allow-domains` | 域名白名单 (逗号分隔) |
-| `--block-domains` | 域名黑名单 (逗号分隔) |
-| `--restrict-root` | 限制在根域名 |
 
 #### HTTP 选项
 
@@ -119,15 +103,6 @@ python RCE_HawkEye.py -u "http://example.com" -c 20 --no-interactive
 | `-H, --header` | 自定义请求头 |
 | `-c, --concurrent` | 并发数 (默认: 10) |
 | `-t, --timeout` | 超时时间/秒 (默认: 10) |
-
-#### 输出选项
-
-| 参数 | 说明 |
-|------|------|
-| `-o, --output-format` | 报告格式 (json/html/md/all) |
-| `-O, --output-file` | 输出文件路径 |
-| `-v, --verbose` | 详细输出 |
-| `-q, --quiet` | 静默模式 |
 
 #### 扫描模式
 
@@ -140,52 +115,101 @@ python RCE_HawkEye.py -u "http://example.com" -c 20 --no-interactive
 
 ---
 
-## 🎯 扫描模式
+## 🎯 检测模式
 
 ### 1. 无害化检测模式 (`--harmless`)
 
-使用时间盲注 payload（sleep/timeout），不执行实际命令，适合生产环境测试。
-
-```bash
-python RCE_HawkEye.py -u "http://example.com" --no-interactive --harmless
-```
+使用时间盲注 payload（sleep/timeout），不执行实际命令。
 
 ### 2. 常规回显模式 (`--echo`)
 
 使用 ls、whoami、id 等命令，可直接获取命令执行结果。
 
-```bash
-python RCE_HawkEye.py -u "http://example.com" --no-interactive --echo
-```
-
 ### 3. WAF 绕过模式 (`--waf-bypass`)
 
 使用编码、特殊字符等技术绕过 WAF 防护。
 
-```bash
-python RCE_HawkEye.py -u "http://example.com" --no-interactive --waf-bypass
+---
+
+## 📊 Level/Risk 机制（借鉴 sqlmap）
+
+### Level（检测深度）
+
+| Level | 描述 | Payload数/参数 |
+|-------|------|---------------|
+| 1 | 基础检测 | ~10 |
+| 2 | 标准检测 | ~30 |
+| 3 | 深度检测 | ~60 |
+| 4 | 完全检测 | 全部 |
+| 5 | exhaustive | 全部+变体 |
+
+### Risk（风险等级）
+
+| Risk | 描述 | 允许类型 |
+|------|------|---------|
+| 1 | 无害 | 时间盲注 |
+| 2 | 低风险 | 时间盲注+回显+代码执行 |
+| 3 | 中等风险 | 全部 |
+
+---
+
+## 🔧 Tamper 插件（借鉴 sqlmap）
+
+支持 50+ 种 Payload 变形脚本：
+
+| 类别 | 脚本示例 |
+|------|---------|
+| 编码类 | `urlencode`, `doubleurlencode`, `base64encode`, `hexencode` |
+| 混淆类 | `space2comment`, `space2ifs`, `randomcase`, `randomcomments` |
+| 绕过类 | `modsecurityversioned`, `apostrophemask`, `appendnullbyte` |
+| 平台类 | `sp_password`(MSSQL), `bluecoat`, `overlongutf8` |
+
+### 使用示例
+
+```python
+from rce_hawkeye import tamper_manager
+
+# 应用单个tamper
+payload = tamper_manager.apply("; ls;", ["space2comment"])
+# 结果: ";/**/ls;"
+
+# 应用多个tamper
+payload = tamper_manager.apply("; ls;", ["space2comment", "randomcase"])
+# 结果: ";/**/lS;"
+
+# 列出所有可用脚本
+scripts = tamper_manager.list_scripts()
 ```
 
 ---
 
-## 📊 检测等级
+## 🔬 启发式检测
 
-| 等级 | Payload数量/参数 | 特点 |
-|------|------------------|------|
-| **快速扫描** | ~10个 | 仅测试最关键的CODE_EXEC类型Payload |
-| **标准扫描** | ~30个 | 平衡速度和覆盖率，包含模板注入 |
-| **深度扫描** | ~60个 | 全面检测，包含WAF绕过 |
-| **完全扫描** | 全部 | 测试所有Payload |
+智能识别 RCE 注入特征：
+
+- **命令注入**: uid=, ls输出, passwd内容
+- **代码注入**: PHP错误, Java异常, Python Traceback
+- **模板注入**: 7*7=49, config对象
+- **错误信息**: command not found, Permission denied
+
+```python
+from rce_hawkeye import HeuristicChecker
+
+checker = HeuristicChecker()
+result = checker.check_response(response, baseline, "cmd", payload)
+
+print(result.injection_type)  # InjectionType.COMMAND_INJECTION
+print(result.confidence)      # 0.95
+print(result.evidence)        # "发现命令注入特征: id命令输出"
+```
 
 ---
 
 ## 🌐 多语言代码执行检测
 
-自动根据 URL 后缀选择对应的代码执行 payload：
-
 | 语言 | URL 后缀 | 检测函数 |
 |------|---------|---------|
-| PHP | `.php`, `.phtml` | `system()`, `exec()`, `shell_exec()`, `passthru()`, `popen()`, `proc_open()` |
+| PHP | `.php`, `.phtml` | `system()`, `exec()`, `shell_exec()`, `passthru()` |
 | JSP | `.jsp`, `.jspx` | `Runtime.exec()`, `ProcessBuilder`, EL 表达式 |
 | ASP | `.asp` | `WScript.Shell` |
 | ASPX | `.aspx`, `.ashx` | `System.Diagnostics.Process.Start()` |
@@ -212,7 +236,6 @@ python RCE_HawkEye.py -u "http://example.com" --no-interactive --waf-bypass
 | **变量切片** | Shell变量切片 | `l${PATH:0:0}s` |
 | **IFS变量** | 使用IFS替换空格 | `l${IFS}s` |
 | **通配符** | 路径通配符 | `/???/??t /???/p??s??` |
-| **脱字符** | Windows脱字符 | `d^ir`, `w^hoami` |
 
 ---
 
@@ -220,35 +243,24 @@ python RCE_HawkEye.py -u "http://example.com" --no-interactive --waf-bypass
 
 ```
 RCE_HawkEye/
-├── rce_hawkeye/             # 核心模块
+├── rce_hawkeye/
 │   ├── __init__.py          # 模块入口
 │   ├── scanner.py           # 核心扫描器
 │   ├── detector.py          # 漏洞检测器
 │   ├── payload_generator.py # Payload 生成器
 │   ├── waf_bypass.py        # WAF绕过生成器
 │   ├── tech_detector.py     # 技术栈检测器
-│   ├── intelligent_scanner.py # 智能扫描器
+│   ├── tamper/              # Tamper插件系统
+│   │   └── __init__.py      # 50+ tamper脚本
+│   ├── heuristic.py         # 启发式检测
 │   ├── reporter.py          # 报告生成器
 │   ├── crawler.py           # 网页爬虫
 │   ├── dir_scanner.py       # 目录扫描器
-│   ├── param_extractor.py   # 参数提取器
-│   ├── traffic_parser.py    # 流量包解析器
-│   ├── config.py            # 配置管理
-│   └── utils.py             # 工具函数
+│   └── ...
 ├── config/
-│   ├── default.yaml         # 默认配置
-│   ├── payloads.yaml        # Payload 库
-│   └── wordlists/           # 字典文件
-│       ├── dirs.txt         # 目录字典
-│       └── params.txt       # 参数字典
-├── examples/
-│   ├── targets.txt          # 目标示例
-│   ├── traffic.txt          # 流量包示例
-│   └── usage_examples.py    # 使用示例
-├── reports/                 # 报告输出目录
+│   └── payloads.yaml        # YAML Payload配置
 ├── RCE_HawkEye.py           # 命令行入口
 ├── requirements.txt         # 依赖文件
-├── LICENSE                  # 许可证
 └── README.md                # 说明文档
 ```
 
@@ -258,9 +270,7 @@ RCE_HawkEye/
 
 ```python
 import asyncio
-from rce_hawkeye import Scanner, Reporter, ScanLevel
-from rce_hawkeye.scanner import ScanTarget
-from rce_hawkeye.payload_generator import ScanMode
+from rce_hawkeye import Scanner, Reporter, ScanLevel, tamper_manager
 
 async def main():
     scanner = Scanner(
@@ -268,20 +278,11 @@ async def main():
         max_concurrent=20,
         scan_level=ScanLevel.NORMAL
     )
-    scanner.set_scan_mode(ScanMode.ECHO)
     
-    target = ScanTarget(
-        url="http://example.com/api?cmd=test",
-        method="GET"
-    )
+    results = await scanner.scan_url("http://example.com/api?cmd=test")
     
-    results = await scanner.scan([target])
-    
-    reporter = Reporter()
-    reporter.save_report(
-        scanner.get_vulnerabilities(),
-        format="html"
-    )
+    for vuln in scanner.get_vulnerabilities():
+        print(f"发现漏洞: {vuln.parameter} - {vuln.payload}")
 
 asyncio.run(main())
 ```
@@ -296,23 +297,29 @@ asyncio.run(main())
 
 ## 📄 许可证
 
-本项目采用 MIT 许可证。详见 [LICENSE](LICENSE) 文件。
+本项目采用 MIT 许可证。
 
 ---
 
 ## 📝 更新日志
 
+### v0.0.5 (2024-02-16)
+
+- ✨ 新增 Tamper 插件系统（50+脚本，借鉴sqlmap）
+- ✨ 新增 YAML Payload 配置（Level/Risk机制）
+- ✨ 新增启发式检测模块（智能识别注入点）
+- ✨ 支持域名和IP直接扫描（无需http://前缀）
+- ✨ 支持HTTPS自动检测和优先使用
+- 🐛 修复tamper模块语法错误
+- 📊 Payload总数: 200+
+- 🛡️ Tamper脚本: 50+
+
 ### v0.0.4 (2024-02-15)
 
-- ✨ 新增检测等级机制（快速/标准/深度/完全）
-- ✨ 新增WAF绕过Payload生成器（70+绕过技术）
-- ✨ 新增多语言支持（Node.js/Ruby/Go/Perl/Lua/ColdFusion）
-- ✨ 新增模板注入检测
-- ✨ 新增技术栈自动检测
-- 🚀 优化并发请求性能（并行基准响应获取）
-- 🐛 修复误报问题（增加基准响应对比）
-- 🐛 修复参数传递错误
-- 📝 完善文档和示例
+- ✨ 新增检测等级机制
+- ✨ 新增WAF绕过Payload生成器
+- ✨ 新增多语言支持
+- 🚀 优化并发请求性能
 
 ### v0.0.3 (2024-02-14)
 
