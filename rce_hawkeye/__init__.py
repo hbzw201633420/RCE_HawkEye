@@ -3,7 +3,7 @@ RCE HawkEye - 命令执行漏洞检测工具
 借鉴sqlmap设计，专精于RCE漏洞检测
 """
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 __author__ = "hbzw"
 
 from .scanner import Scanner, ScanTarget, ScanResult, ScanLevel

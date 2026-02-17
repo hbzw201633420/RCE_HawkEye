@@ -1,7 +1,7 @@
 # RCE HawkEye (RCE鹰眼)
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.0.0-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.0.1-blue.svg" alt="Version">
   <img src="https://img.shields.io/badge/python-3.8+-green.svg" alt="Python">
   <img src="https://img.shields.io/badge/license-MIT-orange.svg" alt="License">
   <img src="https://img.shields.io/badge/author-hbzw-red.svg" alt="Author">
@@ -345,6 +345,22 @@ asyncio.run(main())
 ---
 
 ## 📝 更新日志
+
+### v1.0.1 (2026-02-17)
+
+**🐛 Bug修复**
+- 修复 `requests` 模块导入作用域问题（`local variable 'requests' referenced before assignment`）
+- 修复前端错误信息显示问题（`status_message` 未正确传递）
+- 修复设置页面布局问题（删除重复的 HTML 结构）
+- 添加 CORS 支持，解决跨域请求问题
+
+**🔧 兼容性改进**
+- 支持 CentOS 7 部署（需降级 urllib3 到 v1.26.x）
+- 优化 systemd 服务配置
+
+**📝 文档更新**
+- 添加 CentOS 7 部署指南
+- 更新 GitHub 地址至 `https://github.com/hbzw201633420/RCE_HawkEye`
 
 ### v1.0.0 (2026-02-16)
 

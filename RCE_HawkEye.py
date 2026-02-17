@@ -27,7 +27,7 @@ from rce_hawkeye.param_extractor import ParamExtractor, ParamConfig
 from rce_hawkeye.utils import normalize_target, get_preferred_url, parse_target
 
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 __author__ = "hbzw"
 
 

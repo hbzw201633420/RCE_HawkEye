@@ -13,9 +13,11 @@ import psutil
 import threading
 import asyncio
 import platform
+import requests
 from datetime import datetime
 from pathlib import Path
 from flask import Flask, render_template, jsonify, request, session, redirect, url_for, send_file
+from flask_cors import CORS
 from functools import wraps
 from urllib.parse import urlparse
 
@@ -38,6 +40,7 @@ app = Flask(__name__,
             template_folder='templates',
             static_folder='static')
 app.secret_key = os.urandom(24)
+CORS(app)
 
 USERS = {
     'admin': {'password': 'admin123', 'role': 'admin'},
@@ -214,7 +217,6 @@ def run_full_scan(scan_id):
         advanced = scan.get('advanced', {})
         
         try:
-            import requests
             check_response = requests.head(target_url, timeout=10, allow_redirects=True)
             scan['status_code'] = check_response.status_code
             
@@ -343,6 +345,7 @@ def run_full_scan(scan_id):
         scan['status_message'] = f'Scan error: {str(e)}'
         scan['progress'] = 100
         import traceback
+        print(f"[ERROR] Scan {scan_id} failed:")
         traceback.print_exc()
 
 
@@ -357,7 +360,7 @@ def run_crawler(scan_id, target_url, options, advanced):
             max_pages=advanced.get('crawlPages', 100),
             timeout=10,
             concurrent=10,
-            user_agent='RCE-HawkEye/1.0.0'
+            user_agent='RCE-HawkEye/1.0.1'
         )
         
         parsed = urlparse(target_url)
@@ -407,7 +410,7 @@ def run_dir_scan(scan_id, target_url, advanced):
             threads=advanced.get('dirThreads', 10),
             timeout=10,
             wordlist=advanced.get('dirWordlist'),
-            user_agent='RCE-HawkEye/1.0.0'
+            user_agent='RCE-HawkEye/1.0.1'
         )
         
         dir_scanner = DirectoryScanner(dir_config)
@@ -445,7 +448,7 @@ def run_param_fuzz(scan_id, target_url, advanced):
             max_depth=1,
             max_pages=20,
             param_wordlist=advanced.get('paramWordlist'),
-            user_agent='RCE-HawkEye/1.0.0'
+            user_agent='RCE-HawkEye/1.0.1'
         )
         
         param_extractor = ParamExtractor(param_config)
@@ -515,7 +518,7 @@ def run_rce_scan(scan_id, scan_targets):
             timeout=advanced.get('timeout', 10),
             max_concurrent=advanced.get('concurrent', 10),
             delay_threshold=advanced.get('delayThreshold', 4.0),
-            user_agent='RCE-HawkEye/1.0.0',
+            user_agent='RCE-HawkEye/1.0.1',
             proxy=advanced.get('proxy'),
             verify_ssl=False,
             scan_level=level_map.get(scan['level'], ScanLevel.NORMAL)
@@ -607,9 +610,10 @@ def run_rce_scan(scan_id, scan_targets):
         
     except Exception as e:
         scan['status'] = 'error'
-        scan['status_message'] = f'Scan error: {str(e)}'
+        scan['status_message'] = f'RCE scan error: {str(e)}'
         scan['progress'] = 100
         import traceback
+        print(f"[ERROR] RCE scan {scan_id} failed:")
         traceback.print_exc()
 
 
@@ -1078,7 +1082,7 @@ if __name__ == '__main__':
     print("=" * 50)
     print("RCE HawkEye Web Interface")
     print("=" * 50)
-    print(f"Version: 1.0.0")
+    print(f"Version: 1.0.1")
     print(f"Access: http://localhost:5000")
     print(f"Default credentials: admin / admin123")
     print("=" * 50)

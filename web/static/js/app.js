@@ -257,7 +257,7 @@ function pollScanStatus() {
             }
             
             if (data.status === 'error') {
-                document.getElementById('progressStatus').textContent = t('common.error') + ': ' + (data.error || 'Unknown error');
+                document.getElementById('progressStatus').textContent = t('common.error') + ': ' + (data.status_message || data.error || 'Unknown error');
             }
             
             loadDashboardStats();
