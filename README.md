@@ -360,7 +360,6 @@ asyncio.run(main())
 
 **📝 文档更新**
 - 添加 CentOS 7 部署指南
-- 更新 GitHub 地址至 `https://github.com/hbzw201633420/RCE_HawkEye`
 
 ### v1.0.0 (2026-02-16)
 
