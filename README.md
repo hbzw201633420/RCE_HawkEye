@@ -1,429 +1,418 @@
-# RCE HawkEye (RCE鹰眼)
+# 🦅 RCE HawkEye
 
-<p align="center">
-  <img src="https://img.shields.io/badge/version-1.0.1-blue.svg" alt="Version">
-  <img src="https://img.shields.io/badge/python-3.8+-green.svg" alt="Python">
-  <img src="https://img.shields.io/badge/license-MIT-orange.svg" alt="License">
-  <img src="https://img.shields.io/badge/author-hbzw-red.svg" alt="Author">
-</p>
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Go Version](https://img.shields.io/badge/Go-1.21%2B-00ADD8.svg)](https://golang.org/)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20Docker-green.svg)]()
+[![Version](https://img.shields.io/badge/version-1.1.1-brightgreen.svg)]()
 
-<p align="center">
-  <b>命令执行漏洞自动化检测工具</b><br>
-  <sub>借鉴 sqlmap 设计，专精于 RCE 漏洞检测</sub>
-</p>
+**RCE HawkEye (RCE 鹰眼)** 是一款专业的命令执行漏洞自动化检测工具，支持多种 RCE 漏洞类型的检测，包括命令注入、代码注入、模板注入等。
+
+[English](#english) | [中文文档](#中文文档)
 
 ---
 
-## 📖 项目简介
+## 中文文档
 
-**RCE HawkEye（RCE鹰眼）** 是一款专业的命令执行漏洞自动化检测工具，借鉴 sqlmap 的优秀设计，专精于 RCE 漏洞检测。
+## ✨ 功能特性
 
-### ✨ 核心特性
+### 🔍 核心扫描功能
+- **多类型漏洞检测**：支持命令注入、代码注入、模板注入 (SSTI)、反序列化漏洞等
+- **多参数扫描**：自动提取 GET/POST/JSON/XML 等参数进行测试
+- **智能爬虫**：自动爬取目标站点，发现隐藏的注入点
+- **目录扫描**：集成目录扫描功能，发现敏感文件和目录
 
-- 🔍 **多维度扫描** - 支持 URL 参数、表单、HTTP 头、Cookie、POST 数据等多种输入点
-- 🌐 **多语言支持** - 自动识别 PHP/JSP/ASP/ASPX/Python/Node.js/Ruby/Go/Perl/Lua 等语言的代码执行漏洞
-- 🕷️ **智能爬虫** - 自动爬取网站路径和参数，发现隐藏的注入点
-- 📂 **目录扫描** - 集成字典扫描，发现隐藏目录和敏感文件
-- 🎯 **参数模糊测试** - 使用字典发现隐藏参数，支持 GET/POST 双模式
-- 🎯 **多种检测模式** - 无害化检测、常规回显检测、WAF 绕过检测
-- 📊 **Level/Risk机制** - 5级检测深度 + 3级风险控制（借鉴sqlmap）
-- 🛡️ **Tamper插件** - 50+种Payload变形脚本（借鉴sqlmap）
-- 🔬 **启发式检测** - 智能识别注入点特征
-- 🛡️ **WAF绕过** - 支持70+种WAF绕过技术
-- 📦 **流量包解析** - 支持从文本文件解析 HTTP 流量包进行检测
-- 📊 **详细报告** - JSON/HTML/Markdown 多格式报告
+### 🛡️ 高级功能
+- **WAF 绕过**：内置多种 WAF 绕过技术，支持自定义绕过规则
+- **免杀技术**：30+ 种 Payload 变形脚本，有效绕过安全检测
+- **智能检测**：基于回显、时间盲注、DNS 外带等多种检测方式
+- **启发式分析**：智能分析响应特征，减少误报
 
----
+### 📊 报告与监控
+- **Web 界面**：现代化 Web 管理界面，支持实时监控
+- **多格式报告**：支持 JSON、HTML、Markdown、CSV 格式导出
+- **历史记录**：完整的扫描历史管理，支持搜索和导出
+- **通知系统**：支持企业微信、钉钉、邮件通知
+- **性能监控**：实时 CPU、内存、网络流量监控
+
+### 🌐 国际化
+- **多语言支持**：支持中文和英文界面
+- **响应式设计**：适配桌面和移动设备
+
+## 📦 安装部署
+
+### Windows
+
+#### 方式一：直接运行
+```bash
+# 解压后直接运行
+rce-hawkeye.exe web -p 8080
+
+# 或使用启动脚本
+run.bat web -p 8080
+```
+
+#### 方式二：命令行扫描
+```bash
+# 扫描单个 URL
+rce-hawkeye.exe -u "http://example.com/api?cmd=test"
+
+# 从文件批量扫描
+rce-hawkeye.exe -f urls.txt
+
+# 查看帮助
+rce-hawkeye.exe -h
+```
+
+### Linux
+
+#### 方式一：直接运行
+```bash
+# 添加执行权限
+chmod +x rce-hawkeye
+
+# 启动 Web 服务
+./rce-hawkeye web -p 8080
+
+# 或使用启动脚本
+./run.sh web -p 8080
+```
+
+#### 方式二：安装脚本
+```bash
+# 运行安装脚本（需要 root 权限）
+chmod +x install.sh
+sudo ./install.sh
+
+# 按提示输入安装路径和端口
+# 安装完成后可使用 systemd 管理
+systemctl start rce-hawkeye
+systemctl status rce-hawkeye
+```
+
+#### 方式三：Docker 部署
+```bash
+# 使用 docker-compose
+docker-compose up -d
+
+# 或手动构建
+docker build -t rce-hawkeye .
+docker run -d -p 8080:8080 -v ./reports:/app/reports rce-hawkeye
+```
+
+#### 卸载
+```bash
+# 运行卸载脚本
+sudo ./uninstall.sh
+
+# 可选择保留数据和配置
+```
 
 ## 🚀 快速开始
 
-### 环境要求
-
-- Python 3.8+
-- Windows / Linux / macOS
-
-### 安装
+### 1. 启动 Web 服务
 
 ```bash
-git clone https://github.com/hbzw201633420/RCE_HawkEye.git
-cd RCE_HawkEye
-pip install -r requirements.txt
+# Windows
+rce-hawkeye.exe web -p 8080
+
+# Linux
+./rce-hawkeye web -p 8080
 ```
 
-### 基本使用
+### 2. 访问 Web 界面
 
-```bash
-# 扫描单个 URL
-python RCE_HawkEye.py -u "http://example.com/api?cmd=test"
+打开浏览器访问 `http://localhost:8080`
 
-# 从流量包文件扫描
-python RCE_HawkEye.py -r traffic.txt
+默认账号：
+- 用户名：`admin`
+- 密码：`admin123`
 
-# 从文件读取目标 URL
-python RCE_HawkEye.py -f targets.txt
+### 3. 创建扫描任务
 
-# 爬取网站并扫描
-python RCE_HawkEye.py -u "http://example.com" --crawl
+1. 点击「新建扫描」
+2. 输入目标 URL 或上传文件
+3. 选择扫描级别和模式
+4. 开始扫描
 
-# 目录扫描 + 参数模糊测试
-python RCE_HawkEye.py -u "http://example.com" --dir-scan --param-fuzz
-
-# 指定并发数和检测等级
-python RCE_HawkEye.py -u "http://example.com" -c 20 --no-interactive
-```
-
----
-
-## 📚 详细用法
+## 📖 使用指南
 
 ### 命令行参数
 
-#### 基本参数
-
-| 参数 | 说明 |
-|------|------|
-| `-u, --url` | 目标 URL |
-| `-r, --raw-traffic` | 流量包文件路径 |
-| `-f, --file` | 目标 URL 文件路径 |
-
-#### 扫描选项
-
-| 参数 | 说明 |
-|------|------|
-| `--crawl` | 启用网页爬虫 |
-| `--dir-scan` | 启用目录扫描 |
-| `--param-fuzz` | 启用参数模糊测试 |
-
-#### HTTP 选项
-
-| 参数 | 说明 |
-|------|------|
-| `-m, --method` | HTTP 方法 (GET/POST) |
-| `-d, --data` | POST 数据 |
-| `-H, --header` | 自定义请求头 |
-| `-c, --concurrent` | 并发数 (默认: 10) |
-| `-t, --timeout` | 超时时间/秒 (默认: 10) |
-
-#### 扫描模式
-
-| 参数 | 说明 |
-|------|------|
-| `--no-interactive` | 非交互模式 |
-| `--harmless` | 无害化检测模式 |
-| `--echo` | 常规回显模式 |
-| `--waf-bypass` | WAF 绕过模式 |
-
----
-
-## 🎯 检测模式
-
-### 1. 无害化检测模式 (`--harmless`)
-
-使用时间盲注 payload（sleep/timeout），不执行实际命令。
-
-### 2. 常规回显模式 (`--echo`)
-
-使用 ls、whoami、id 等命令，可直接获取命令执行结果。
-
-### 3. WAF 绕过模式 (`--waf-bypass`)
-
-使用编码、特殊字符等技术绕过 WAF 防护。
-
----
-
-## 📊 Level/Risk 机制（借鉴 sqlmap）
-
-### Level（检测深度）
-
-| Level | 描述 | Payload数/参数 |
-|-------|------|---------------|
-| 1 | 基础检测 | ~10 |
-| 2 | 标准检测 | ~30 |
-| 3 | 深度检测 | ~60 |
-| 4 | 完全检测 | 全部 |
-| 5 | exhaustive | 全部+变体 |
-
-### Risk（风险等级）
-
-| Risk | 描述 | 允许类型 |
-|------|------|---------|
-| 1 | 无害 | 时间盲注 |
-| 2 | 低风险 | 时间盲注+回显+代码执行 |
-| 3 | 中等风险 | 全部 |
-
----
-
-## 🔧 Tamper 插件（借鉴 sqlmap）
-
-支持 50+ 种 Payload 变形脚本：
-
-| 类别 | 脚本示例 |
-|------|---------|
-| 编码类 | `urlencode`, `doubleurlencode`, `base64encode`, `hexencode` |
-| 混淆类 | `space2comment`, `space2ifs`, `randomcase`, `randomcomments` |
-| 绕过类 | `modsecurityversioned`, `apostrophemask`, `appendnullbyte` |
-| 平台类 | `sp_password`(MSSQL), `bluecoat`, `overlongutf8` |
-
-### 使用示例
-
-```python
-from rce_hawkeye import tamper_manager
-
-# 应用单个tamper
-payload = tamper_manager.apply("; ls;", ["space2comment"])
-# 结果: ";/**/ls;"
-
-# 应用多个tamper
-payload = tamper_manager.apply("; ls;", ["space2comment", "randomcase"])
-# 结果: ";/**/lS;"
-
-# 列出所有可用脚本
-scripts = tamper_manager.list_scripts()
-```
-
----
-
-## 🔬 启发式检测
-
-智能识别 RCE 注入特征：
-
-- **命令注入**: uid=, ls输出, passwd内容
-- **代码注入**: PHP错误, Java异常, Python Traceback
-- **模板注入**: 7*7=49, config对象
-- **错误信息**: command not found, Permission denied
-
-```python
-from rce_hawkeye import HeuristicChecker
-
-checker = HeuristicChecker()
-result = checker.check_response(response, baseline, "cmd", payload)
-
-print(result.injection_type)  # InjectionType.COMMAND_INJECTION
-print(result.confidence)      # 0.95
-print(result.evidence)        # "发现命令注入特征: id命令输出"
-```
-
----
-
-## 🖥️ Web 界面
-
-RCE HawkEye 提供现代化的 Web 界面，采用 Glassmorphism 设计风格。
-
-### 启动 Web 服务
-
 ```bash
-# 安装额外依赖
-pip install flask flask-cors psutil requests
+RCE HawkEye - RCE Vulnerability Scanner
 
-# 启动 Web 服务
-cd web
-python app.py
+Usage:
+  rce-hawkeye [flags]
+  rce-hawkeye [command]
 
-# 访问 http://localhost:5000
-# 默认账号: admin / admin123
+Available Commands:
+  web         Start web interface
+  update      Check for updates
+  version     Print version information
+  help        Help about any command
+
+Flags:
+  -u, --url string        Target URL to scan
+  -f, --file string       File containing URLs to scan
+  -l, --level string      Scan level: quick, normal, deep, exhaustive (default "normal")
+  -m, --mode string       Scan mode: echo, time, dns (default "echo")
+  -o, --output string     Output file for results
+  -t, --timeout int       Request timeout in seconds (default 10)
+  -c, --concurrent int    Max concurrent requests (default 10)
+  -p, --proxy string      Proxy URL (e.g., http://127.0.0.1:8080)
+      --waf-bypass        Enable WAF bypass techniques
+      --verify-ssl        Verify SSL certificates
+  -h, --help              Help for rce-hawkeye
+
+Examples:
+  # Quick scan
+  rce-hawkeye -u "http://example.com/api?cmd=test" -l quick
+
+  # Deep scan with WAF bypass
+  rce-hawkeye -u "http://example.com" -l deep --waf-bypass
+
+  # Batch scan from file
+  rce-hawkeye -f urls.txt -o results.json
+
+  # Start web interface
+  rce-hawkeye web -p 8080
+
+  # Check for updates
+  rce-hawkeye update
 ```
 
-### Web 界面功能
+### 扫描级别
 
-| 功能 | 描述 |
+| 级别 | 说明 | Payload 数量 |
+|------|------|-------------|
+| quick | 快速扫描，仅测试关键 Payload | ~10 |
+| normal | 标准扫描，平衡速度和覆盖率 | ~30 |
+| deep | 深度扫描，全面检测 | ~60 |
+| exhaustive | 穷举扫描，测试所有 Payload | 全部 |
+
+### 检测模式
+
+| 模式 | 说明 |
 |------|------|
-| **登录页面** | 表单验证、记住我功能、忘记密码链接 |
-| **扫描仪表板** | 目标输入、扫描配置、实时进度、结果展示 |
-| **性能监控** | CPU、内存、网络流量实时图表 |
-| **报告导出** | JSON/HTML/Markdown 多格式导出 |
+| echo | 回显检测 - 检测响应中的命令执行结果 |
+| time | 时间盲注 - 通过响应延迟判断 |
+| dns | DNS 外带 - 通过 DNS 查询获取回显 |
 
-### 界面预览
-
-```
-┌─────────────────────────────────────────────────────┐
-│  🔐 RCE HawkEye - Login                             │
-│  ┌─────────────────────────────────────────────┐    │
-│  │  Username: [________________]                │    │
-│  │  Password: [________________]                │    │
-│  │  ☐ Remember me    Forgot password?          │    │
-│  │  [        Sign In        ]                   │    │
-│  └─────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────┘
-```
-
----
-
-## 🌐 多语言代码执行检测
-
-| 语言 | URL 后缀 | 检测函数 |
-|------|---------|---------|
-| PHP | `.php`, `.phtml` | `system()`, `exec()`, `shell_exec()`, `passthru()` |
-| JSP | `.jsp`, `.jspx` | `Runtime.exec()`, `ProcessBuilder`, EL 表达式 |
-| ASP | `.asp` | `WScript.Shell` |
-| ASPX | `.aspx`, `.ashx` | `System.Diagnostics.Process.Start()` |
-| Python | `.py`, `.cgi` | `__import__()`, `eval()`, `exec()`, `subprocess` |
-| Node.js | `.js`, `.mjs` | `require('child_process')`, `process.binding()` |
-| Ruby | `.rb`, `.erb` | `system()`, `exec()`, `IO.popen()` |
-| Go | `.go` | `exec.Command()`, `syscall.Exec()` |
-| Perl | `.pl`, `.cgi` | `system()`, `exec()`, `qx{}` |
-| Lua | `.lua` | `os.execute()`, `io.popen()` |
-
----
-
-## 🛡️ WAF 绕过技术
-
-支持 70+ 种 WAF 绕过技术：
-
-| 技术类型 | 描述 | 示例 |
-|----------|------|------|
-| **URL编码** | 单重/双重URL编码 | `%3B%20ls%3B` |
-| **Base64编码** | Base64编码执行 | `$(echo'bHM='\|base64-d)` |
-| **注释混淆** | 插入注释分割 | `sys/**/tem('ls')` |
-| **大小写变换** | 混合大小写 | `sYsTeM('ls')` |
-| **引号分割** | 引号打断关键词 | `l''s`, `wh''oami` |
-| **变量切片** | Shell变量切片 | `l${PATH:0:0}s` |
-| **IFS变量** | 使用IFS替换空格 | `l${IFS}s` |
-| **通配符** | 路径通配符 | `/???/??t /???/p??s??` |
-
----
-
-## 📁 项目结构
+## 📁 目录结构
 
 ```
 RCE_HawkEye/
-├── rce_hawkeye/
-│   ├── __init__.py          # 模块入口
-│   ├── scanner.py           # 核心扫描器
-│   ├── detector.py          # 漏洞检测器
-│   ├── payload_generator.py # Payload 生成器
-│   ├── waf_bypass.py        # WAF绕过生成器
-│   ├── tech_detector.py     # 技术栈检测器
-│   ├── tamper/              # Tamper插件系统
-│   │   └── __init__.py      # 50+ tamper脚本
-│   ├── heuristic.py         # 启发式检测
-│   ├── reporter.py          # 报告生成器
-│   ├── crawler.py           # 网页爬虫
-│   ├── dir_scanner.py       # 目录扫描器
-│   └── ...
-├── config/
-│   └── payloads.yaml        # YAML Payload配置
-├── RCE_HawkEye.py           # 命令行入口
-├── requirements.txt         # 依赖文件
-└── README.md                # 说明文档
+├── rce-hawkeye          # 主程序
+├── run.bat / run.sh     # 启动脚本
+├── install.sh           # Linux 安装脚本
+├── uninstall.sh         # Linux 卸载脚本
+├── Dockerfile           # Docker 构建文件
+├── docker-compose.yml   # Docker Compose 配置
+├── configs/
+│   └── config.yaml      # 配置文件
+├── data/
+│   ├── dict/
+│   │   └── dir_dict.json    # 目录扫描字典
+│   └── history/             # 扫描历史
+└── reports/                 # 报告输出目录
 ```
 
----
+## ⚙️ 配置说明
 
-## 🔧 作为库使用
+编辑 `configs/config.yaml` 文件：
 
-```python
-import asyncio
-from rce_hawkeye import Scanner, Reporter, ScanLevel, tamper_manager
+```yaml
+domain:
+  max_depth: 2          # 爬虫最大深度
+  max_pages: 100        # 最大爬取页面数
+  exclude_extensions:   # 排除的文件扩展名
+    - .jpg
+    - .png
+    - .pdf
 
-async def main():
-    scanner = Scanner(
-        timeout=10, 
-        max_concurrent=20,
-        scan_level=ScanLevel.NORMAL
-    )
-    
-    results = await scanner.scan_url("http://example.com/api?cmd=test")
-    
-    for vuln in scanner.get_vulnerabilities():
-        print(f"发现漏洞: {vuln.parameter} - {vuln.payload}")
-
-asyncio.run(main())
+scan:
+  timeout: 10           # 请求超时（秒）
+  max_concurrent: 10    # 最大并发数
+  delay_threshold: 4.0  # 延迟阈值
+  scan_level: "normal"  # 默认扫描级别
 ```
 
----
+## 🔧 API 接口
 
-## ⚠️ 免责声明
+Web 服务提供 RESTful API：
 
-本工具仅供**授权的安全测试**使用。在未获得明确授权的情况下，禁止对他人系统进行扫描测试。使用本工具所产生的一切后果由使用者自行承担，与作者无关。
+| 端点 | 方法 | 说明 |
+|------|------|------|
+| `/api/login` | POST | 用户登录 |
+| `/api/scan` | POST | 创建扫描任务 |
+| `/api/scan/:id` | GET | 获取扫描状态 |
+| `/api/scan/:id/stop` | POST | 停止扫描 |
+| `/api/history` | GET | 获取扫描历史 |
+| `/api/history/export` | POST | 导出历史记录 |
+| `/api/monitor` | GET | 获取系统监控数据 |
+| `/api/version` | GET | 获取版本信息 |
+| `/api/version/check` | GET | 检查更新 |
+| `/api/notification/config` | GET/POST | 通知配置 |
 
----
+## 🔄 更新说明
+
+### 版本更新
+
+```bash
+# 命令行检查更新
+rce-hawkeye update
+
+# Web 界面：设置 -> 关于 -> 检查更新
+```
+
+### 更新不影响数据
+
+更新时以下数据会自动保留：
+- `configs/config.yaml` - 配置文件
+- `data/history/` - 扫描历史记录
+- `data/dict/` - 字典文件
+
+## 🛡️ 安全建议
+
+1. **授权使用**：仅对授权目标进行测试
+2. **网络安全**：建议在内网环境使用
+3. **数据保护**：定期清理敏感扫描数据
+4. **访问控制**：修改默认密码，限制访问 IP
+
+## 🤝 贡献指南
+
+欢迎提交 Issue 和 Pull Request！
+
+1. Fork 本仓库
+2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 提交 Pull Request
 
 ## 📄 许可证
 
-本项目采用 MIT 许可证。
+本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件
+
+## 🙏 致谢
+
+感谢所有贡献者和安全社区的支持！
 
 ---
 
-## 📝 更新日志
+## English
 
-### v1.0.1 (2026-02-17)
+## ✨ Features
 
-**🐛 Bug修复**
-- 修复 `requests` 模块导入作用域问题（`local variable 'requests' referenced before assignment`）
-- 修复前端错误信息显示问题（`status_message` 未正确传递）
-- 修复设置页面布局问题（删除重复的 HTML 结构）
-- 添加 CORS 支持，解决跨域请求问题
+### 🔍 Core Scanning
+- **Multi-type Vulnerability Detection**: Command injection, code injection, SSTI, deserialization, etc.
+- **Multi-parameter Scanning**: Auto-extract GET/POST/JSON/XML parameters
+- **Smart Crawler**: Auto-discover hidden injection points
+- **Directory Scanning**: Discover sensitive files and directories
 
-**🔧 兼容性改进**
-- 支持 CentOS 7 部署（需降级 urllib3 到 v1.26.x）
-- 优化 systemd 服务配置
+### 🛡️ Advanced Features
+- **WAF Bypass**: Built-in WAF bypass techniques
+- **Evasion**: 30+ payload mutation scripts
+- **Smart Detection**: Echo-based, time-based, DNS exfiltration
+- **Heuristic Analysis**: Intelligent response analysis
 
-**📝 文档更新**
-- 添加 CentOS 7 部署指南
+### 📊 Reports & Monitoring
+- **Web Interface**: Modern web UI with real-time monitoring
+- **Multi-format Reports**: JSON, HTML, Markdown, CSV
+- **History Management**: Complete scan history with search and export
+- **Notifications**: WeChat Work, DingTalk, Email
+- **Performance Monitoring**: Real-time CPU, memory, network monitoring
 
-### v1.0.0 (2026-02-16)
+## 📦 Installation
 
-**🎉 首个正式版本发布**
+### Windows
+```bash
+# Run directly
+rce-hawkeye.exe web -p 8080
 
-**Web界面增强**
+# Or use the startup script
+run.bat web -p 8080
+```
 
-- � **全新设置页面** - 5个设置标签（常规/扫描/账户/数据/关于）
-- 📦 **批量扫描功能** - 支持文件导入和多URL输入
-- 🔔 **通知系统** - Toast通知和通知下拉面板
-- 👤 **用户菜单** - 下拉菜单和退出登录功能
-- 📊 **存储统计** - 实时显示扫描数据统计
+### Linux
+```bash
+# Add execute permission
+chmod +x rce-hawkeye
 
-**Bug修复**
-- 🐛 修复导出功能缺少参数问题
-- 🐛 修复HTTP/HTTPS协议转换问题（非标准端口）
-- 🐛 修复目标不可达时无限扫描问题
-- 🐛 修复showSection函数事件处理问题
-- 🐛 修复设置页面布局问题
+# Run directly
+./rce-hawkeye web -p 8080
 
-**功能完善**
-- ✨ 目标可达性预检测
-- ✨ 扫描结果自动生成报告
-- ✨ 多格式报告导出（JSON/HTML/Markdown）
+# Or install as service
+sudo ./install.sh
+systemctl start rce-hawkeye
+```
 
-**统计数据**
-- 📊 Payload总数: 200+
-- 🛡️ Tamper脚本: 50+
-- 🌐 支持语言: 中文/英文
+### Docker
+```bash
+docker-compose up -d
+```
 
-### v0.0.5 (2024-02-16)
+## 🚀 Quick Start
 
-- ✨ 新增 Tamper 插件系统（50+脚本，借鉴sqlmap）
-- ✨ 新增 YAML Payload 配置（Level/Risk机制）
-- ✨ 新增启发式检测模块（智能识别注入点）
-- ✨ 支持域名和IP直接扫描（无需http://前缀）
-- ✨ 支持HTTPS自动检测和优先使用
-- ✨ 新增Web界面（Glassmorphism风格）
-  - 登录页面（表单验证、记住我功能）
-  - 扫描器仪表板（实时进度、结果展示）
-  - 性能监控（CPU、内存、网络实时图表）
-- 🐛 修复tamper模块语法错误
-- 📊 Payload总数: 200+
-- 🛡️ Tamper脚本: 50+
+1. Start the web service: `rce-hawkeye web -p 8080`
+2. Open browser: `http://localhost:8080`
+3. Login with default credentials: `admin` / `admin123`
+4. Create a new scan task
 
-### v0.0.4 (2024-02-15)
+## 📁 Required Files
 
-- ✨ 新增检测等级机制
-- ✨ 新增WAF绕过Payload生成器
-- ✨ 新增多语言支持
-- 🚀 优化并发请求性能
+### Windows Release
+```
+RCE_HawkEye_Windows/
+├── rce-hawkeye.exe     # Main executable
+├── run.bat             # Startup script
+├── README.md           # Documentation
+├── LICENSE             # License file
+├── configs/
+│   └── config.yaml     # Configuration
+├── data/
+│   └── dict/
+│       └── dir_dict.json  # Directory dictionary
+├── reports/            # Reports directory
+│   └── .gitkeep
+└── data/
+    └── history/        # History directory
+        └── .gitkeep
+```
 
-### v0.0.3 (2024-02-14)
+### Linux Release
+```
+RCE_HawkEye_Linux/
+├── rce-hawkeye         # Main executable
+├── run.sh              # Startup script
+├── install.sh          # Installation script
+├── uninstall.sh        # Uninstallation script
+├── Dockerfile          # Docker build file
+├── docker-compose.yml  # Docker Compose config
+├── README.md           # Documentation
+├── LICENSE             # License file
+├── configs/
+│   └── config.yaml     # Configuration
+├── data/
+│   └── dict/
+│       └── dir_dict.json  # Directory dictionary
+├── reports/            # Reports directory
+│   └── .gitkeep
+└── data/
+    └── history/        # History directory
+        └── .gitkeep
+```
 
-- ✨ 新增目录扫描功能
-- ✨ 新增参数模糊测试功能
-- ✨ 新增多语言代码执行检测 (PHP/JSP/ASP/ASPX/Python)
-- ✨ 新增交互式路径选择功能
-- ✨ 新增 POST 参数扫描支持
-- 🐛 修复交互模式下的多个问题
-- 📝 完善文档和示例
+## 🛡️ Security Notice
+
+1. **Authorized Use Only**: Only test targets you have permission to test
+2. **Network Security**: Recommended for internal network use
+3. **Data Protection**: Regularly clean sensitive scan data
+4. **Access Control**: Change default password, restrict access IP
+
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE) file
 
 ---
 
-<p align="center">
-  <b>⭐ 如果这个项目对你有帮助，请给一个 Star ⭐</b>
-</p>
+**⚠️ Disclaimer**: This tool is for security research and authorized testing only. Do not use for illegal purposes. Users are responsible for all consequences of using this tool.
