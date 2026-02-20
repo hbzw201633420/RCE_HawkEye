@@ -1,0 +1,49 @@
+domain:
+  allowed_domains: []
+  blocked_domains: []
+  restrict_to_root: true
+  max_depth: 2
+  max_pages: 100
+  exclude_extensions:
+    - .jpg
+    - .jpeg
+    - .png
+    - .gif
+    - .bmp
+    - .svg
+    - .css
+    - .js
+    - .woff
+    - .woff2
+    - .ttf
+    - .eot
+    - .pdf
+    - .doc
+    - .docx
+    - .xls
+    - .xlsx
+    - .ppt
+    - .pptx
+    - .zip
+    - .rar
+    - .tar
+    - .gz
+    - .7z
+    - .mp3
+    - .mp4
+    - .avi
+    - .mov
+    - .wmv
+    - .flv
+    - .ico
+    - .xml
+    - .json
+    - .rss
+    - .atom
+
+scan:
+  timeout: 10
+  max_concurrent: 10
+  delay_threshold: 4.0
+  user_agent: "RCE-HawkEye/1.1.0"
+  scan_level: "normal"
