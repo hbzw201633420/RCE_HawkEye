@@ -1,4 +1,4 @@
-package web
+﻿﻿package web
 
 var customJS = `
 var currentScanId = null;
@@ -12,6 +12,16 @@ var vulnChart = null;
 var currentTimeRange = 'realtime';
 var alertCount = 0;
 var confirmCallback = null;
+
+function safeT(key, defaultText) {
+    if (typeof t === 'function') {
+        var result = t(key);
+        if (result && result !== key) {
+            return result;
+        }
+    }
+    return defaultText || key;
+}
 
 function showSection(sectionName, event) {
     if (event && typeof event.preventDefault === 'function') {
@@ -54,8 +64,8 @@ function showSection(sectionName, event) {
         }
         
         var titleMap = {
-            'dashboard': 'nav.dashboard',
-            'scanner': 'nav.scanner',
+            'dashboard': '仪表板',
+            'scanner': '扫描器',
             'exploit': 'nav.exploit',
             'monitoring': 'nav.monitoring',
             'reports': 'nav.reports',
@@ -95,6 +105,7 @@ function showSection(sectionName, event) {
             loadReports();
         } else if (sectionName === 'scanner' && typeof loadActiveScans === 'function') {
             loadActiveScans();
+            if (typeof loadScanSettings === 'function') loadScanSettings();
         } else if (sectionName === 'history' && typeof loadHistory === 'function') {
             loadHistory();
         } else if (sectionName === 'dashboard') {
@@ -127,7 +138,7 @@ function showConfigTab(tabName, event) {
     });
     
     if (event && event.target) {
-        var tab = event.target.closest('.config-tab');
+        var tab = event.target.closest('a');
         if (tab) {
             tab.classList.add('active');
         }
@@ -152,7 +163,7 @@ function showSettingsTab(tabName, event) {
     });
     
     if (event && event.target) {
-        var tab = event.target.closest('.settings-tab');
+        var tab = event.target.closest('a');
         if (tab) {
             tab.classList.add('active');
         }
@@ -196,7 +207,7 @@ async function loadVersionInfo() {
 async function checkForUpdates() {
     var updateStatus = document.getElementById('updateStatus');
     if (updateStatus) {
-        updateStatus.innerHTML = '<span class="checking">' + (t('about.checking') || 'Checking for updates...') + '</span>';
+        updateStatus.innerHTML = '<span class="checking">' + safeT('about.checking', 'Checking for updates...') + '</span>';
     }
     
     try {
@@ -206,18 +217,18 @@ async function checkForUpdates() {
         if (data.success) {
             if (data.update_available) {
                 updateStatus.innerHTML = '<div class="update-available">' +
-                    '<span class="new-version">' + (t('about.newVersion') || 'New version available!') + ' v' + data.latest_version + '</span>' +
+                    '<span class="new-version">' + safeT('about.newVersion', 'New version available!') + ' v' + data.latest_version + '</span>' +
                     '<a href="' + data.download_url + '" target="_blank" class="btn-primary" style="margin-top: 8px;">' +
-                    (t('about.download') || 'Download') + '</a>' +
+                    safeT('about.download', 'Download') + '</a>' +
                     '</div>';
             } else {
-                updateStatus.innerHTML = '<span class="up-to-date">' + (t('about.upToDate') || 'You are running the latest version!') + '</span>';
+                updateStatus.innerHTML = '<span class="up-to-date">' + safeT('about.upToDate', 'You are running the latest version!') + '</span>';
             }
         }
     } catch (error) {
         console.error('Failed to check for updates:', error);
         if (updateStatus) {
-            updateStatus.innerHTML = '<span class="error">' + (t('about.checkFailed') || 'Failed to check for updates') + '</span>';
+            updateStatus.innerHTML = '<span class="error">' + safeT('about.checkFailed', 'Failed to check for updates') + '</span>';
         }
     }
 }
@@ -247,7 +258,7 @@ function initGlobalEventListeners() {
 }
 
 function logout() {
-    showConfirm(t('common.logoutConfirm') || 'Are you sure you want to logout?', function() {
+    showConfirm(safeT('common.logoutConfirm', 'Are you sure you want to logout?'), function() {
         fetch('/api/logout', { method: 'POST' }).then(function() {
             window.location.href = '/login';
         });
@@ -300,11 +311,9 @@ function initDashboardChart() {
     });
 }
 
-var cpuChart, memoryChart, networkChart, goroutineChart, heapChart, gcChart;
+var cpuChart, memoryChart, networkChart, gcChart;
 var cpuGaugeChart, memoryGaugeChart, heapGaugeChart, networkGaugeChart;
 var currentChartView = 'trend';
-var currentTimeRange = 'realtime';
-var monitorInterval = null;
 
 function initMonitorCharts() {
     if (typeof Chart === 'undefined') return;
@@ -696,7 +705,7 @@ function renderAlerts(alerts) {
     if (!container) return;
     
     if (!alerts || alerts.length === 0) {
-        container.innerHTML = '<p class="text-muted">' + (t('alerts.noAlerts') || 'No alerts') + '</p>';
+        container.innerHTML = '<p class="text-muted">' + safeT('alerts.noAlerts', 'No alerts') + '</p>';
         return;
     }
     
@@ -728,7 +737,7 @@ function closeAlertModal() {
 }
 
 async function clearAlerts() {
-    showConfirm(t('common.confirmClear') || 'Clear all alerts?', async function() {
+    showConfirm(safeT('monitoring.confirmClearAlerts', 'Clear all alerts?'), async function() {
         try {
             await fetch('/api/alerts/clear', { method: 'POST' });
             alertCount = 0;
@@ -759,6 +768,25 @@ async function exportAllReports() {
 
 function setUserAgent(value) {
     var input = document.getElementById('httpUserAgent');
+    if (!input) return;
+    
+    var agents = {
+        'default': 'RCE-HawkEye/1.1.2',
+        'chrome': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'firefox': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
+        'safari': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15',
+        'curl': 'curl/8.4.0',
+        'custom': input.value
+    };
+    
+    if (value !== 'custom') {
+        input.value = agents[value] || agents['default'];
+    }
+    input.readOnly = value !== 'custom';
+}
+
+function setSettingsUserAgent(value) {
+    var input = document.getElementById('settingsHttpUserAgent');
     if (!input) return;
     
     var agents = {
@@ -800,12 +828,12 @@ async function testProxy() {
         var data = await response.json();
         
         if (data.success) {
-            if (resultSpan) resultSpan.innerHTML = '<span style="color: var(--accent-green);">✓ ' + (t('proxy.testSuccess') || 'Connection successful') + ' (' + data.latency + 'ms)</span>';
+            if (resultSpan) resultSpan.innerHTML = '<span style="color: var(--accent-green);">鉁?' + safeT('proxy.testSuccess', 'Connection successful') + ' (' + data.latency + 'ms)</span>';
         } else {
-            if (resultSpan) resultSpan.innerHTML = '<span style="color: var(--accent-red);">✗ ' + (data.error || t('proxy.testFailed') || 'Connection failed') + '</span>';
+            if (resultSpan) resultSpan.innerHTML = '<span style="color: var(--accent-red);">鉁?' + (data.error || safeT('common.error', 'Error') || 'Connection failed') + '</span>';
         }
     } catch (error) {
-        if (resultSpan) resultSpan.innerHTML = '<span style="color: var(--accent-red);">✗ ' + error.message + '</span>';
+        if (resultSpan) resultSpan.innerHTML = '<span style="color: var(--accent-red);">鉁?' + error.message + '</span>';
     }
 }
 
@@ -833,12 +861,12 @@ async function testSettingsProxy() {
         var data = await response.json();
         
         if (data.success) {
-            if (resultSpan) resultSpan.innerHTML = '<span style="color: var(--accent-green);">✓ ' + (t('proxy.testSuccess') || 'Connection successful') + ' (' + data.latency + 'ms)</span>';
+            if (resultSpan) resultSpan.innerHTML = '<span style="color: var(--accent-green);">鉁?' + safeT('proxy.testSuccess', 'Connection successful') + ' (' + data.latency + 'ms)</span>';
         } else {
-            if (resultSpan) resultSpan.innerHTML = '<span style="color: var(--accent-red);">✗ ' + (data.error || t('proxy.testFailed') || 'Connection failed') + '</span>';
+            if (resultSpan) resultSpan.innerHTML = '<span style="color: var(--accent-red);">鉁?' + (data.error || safeT('common.error', 'Error') || 'Connection failed') + '</span>';
         }
     } catch (error) {
-        if (resultSpan) resultSpan.innerHTML = '<span style="color: var(--accent-red);">✗ ' + error.message + '</span>';
+        if (resultSpan) resultSpan.innerHTML = '<span style="color: var(--accent-red);">鉁?' + error.message + '</span>';
     }
 }
 
@@ -900,13 +928,13 @@ function getScanConfig() {
     var httpHeaders = document.getElementById('httpHeaders');
     var headers = [];
     if (httpHeaders && httpHeaders.value) {
-        httpHeaders.value.split('\\n').forEach(function(h) {
+        httpHeaders.value.split('\n').forEach(function(h) {
             if (h.trim()) headers.push(h.trim());
         });
     }
     
     var urlFile = document.getElementById('urlFile');
-    var urls = urlFile && urlFile.value ? urlFile.value.split('\\n').map(function(u) { return u.trim(); }).filter(function(u) { return u; }) : [];
+    var urls = urlFile && urlFile.value ? urlFile.value.split('\n').map(function(u) { return u.trim(); }).filter(function(u) { return u; }) : [];
     
     var techStack = [];
     document.querySelectorAll('input[name="techStack"]:checked').forEach(function(cb) {
@@ -929,7 +957,7 @@ function getScanConfig() {
     });
     
     var customPayloads = document.getElementById('customPayloads') ? document.getElementById('customPayloads').value : '';
-    var customPayloadsList = customPayloads ? customPayloads.split('\\n').map(function(p) { return p.trim(); }).filter(function(p) { return p; }) : [];
+    var customPayloadsList = customPayloads ? customPayloads.split('\n').map(function(p) { return p.trim(); }).filter(function(p) { return p; }) : [];
     
     function getVal(id, def) {
         var el = document.getElementById(id);
@@ -1006,17 +1034,300 @@ function getScanConfig() {
     };
 }
 
+var defaultScanSettings = {
+    scan_level: '2',
+    scan_mode: 'echo',
+    concurrent: 10,
+    timeout: 10,
+    crawl: false,
+    dir_scan: true,
+    param_fuzz: true,
+    smart_dict: true,
+    include_response: false,
+    verify_ssl: false,
+    http_method: 'GET',
+    delay_threshold: 4,
+    user_agent: 'RCE-HawkEye/1.1.1',
+    crawl_depth: 2,
+    crawl_pages: 100,
+    dir_threads: 10,
+    dir_filter_status: '200',
+    output_format: 'html',
+    output_dir: './reports',
+    target_os: 'both',
+    tech_stack: ['php', 'jsp', 'asp', 'aspx', 'python', 'nodejs', 'template'],
+    payload_types: ['echo', 'time', 'code'],
+    encodings: ['url'],
+    bypass_techniques: []
+};
+
+function setElementValue(id, value) {
+    var el = document.getElementById(id);
+    if (el) {
+        el.value = value;
+    }
+}
+
+function setElementChecked(id, checked) {
+    var el = document.getElementById(id);
+    if (el) {
+        el.checked = checked;
+    }
+}
+
+function resetScanSettings() {
+    try {
+        setElementValue('targetUrl', '');
+        setElementValue('urlFile', '');
+        setElementValue('rawTraffic', '');
+        
+        setElementValue('scanLevel', defaultScanSettings.scan_level);
+        setElementValue('scanMode', defaultScanSettings.scan_mode);
+        setElementValue('concurrent', defaultScanSettings.concurrent);
+        setElementValue('timeout', defaultScanSettings.timeout);
+        
+        setElementChecked('optCrawl', defaultScanSettings.crawl);
+        setElementChecked('optDirScan', defaultScanSettings.dir_scan);
+        setElementChecked('optParamFuzz', defaultScanSettings.param_fuzz);
+        setElementChecked('optSmartDict', defaultScanSettings.smart_dict);
+        setElementChecked('optIncludeResponse', defaultScanSettings.include_response);
+        setElementChecked('optVerifySSL', defaultScanSettings.verify_ssl);
+        
+        setElementValue('httpMethod', defaultScanSettings.http_method);
+        setElementValue('delayThreshold', defaultScanSettings.delay_threshold);
+        setElementValue('httpPostData', '');
+        setElementValue('httpHeaders', '');
+        setElementValue('userAgentSelect', 'default');
+        setElementValue('httpUserAgent', defaultScanSettings.user_agent);
+        
+        setElementValue('proxyType', '');
+        setElementValue('proxyAddress', '');
+        setElementValue('proxyUsername', '');
+        setElementValue('proxyPassword', '');
+        
+        setElementValue('crawlDepth', defaultScanSettings.crawl_depth);
+        setElementValue('crawlPages', defaultScanSettings.crawl_pages);
+        setElementValue('dirThreads', defaultScanSettings.dir_threads);
+        setElementValue('dirFilterStatus', defaultScanSettings.dir_filter_status);
+        setElementValue('dirFilterExt', '');
+        setElementValue('dirFilterPattern', '');
+        setElementValue('dirWordlist', '');
+        setElementValue('archiveThreshold', 30);
+        
+        setElementValue('outputFormat', defaultScanSettings.output_format);
+        setElementValue('outputDir', defaultScanSettings.output_dir);
+        
+        setElementValue('targetOS', defaultScanSettings.target_os);
+        
+        document.querySelectorAll('input[name="techStack"]').forEach(function(cb) {
+            cb.checked = defaultScanSettings.tech_stack.indexOf(cb.value) !== -1;
+        });
+        
+        document.querySelectorAll('input[name="payloadType"]').forEach(function(cb) {
+            cb.checked = defaultScanSettings.payload_types.indexOf(cb.value) !== -1;
+        });
+        
+        document.querySelectorAll('input[name="encoding"]').forEach(function(cb) {
+            cb.checked = defaultScanSettings.encodings.indexOf(cb.value) !== -1;
+        });
+        
+        document.querySelectorAll('input[name="bypass"]').forEach(function(cb) {
+            cb.checked = false;
+        });
+        
+        setElementValue('customPayloads', '');
+        setElementValue('customWordlist', '');
+        
+        setElementValue('allowDomains', '');
+        setElementValue('blockDomains', '');
+        setElementChecked('optRestrictRoot', true);
+        
+        var progressSection = document.getElementById('progressSection');
+        if (progressSection) progressSection.style.display = 'none';
+        
+        localStorage.removeItem('rce_hawkeye_settings');
+        
+        showNotification(safeT('settings.settingsReset', 'Settings reset to defaults'), 'success');
+    } catch (e) {
+        console.error('Reset settings error:', e);
+        showNotification('Error resetting settings: ' + e.message, 'error');
+    }
+}
+
+function saveScanSettings() {
+    try {
+        var config = getScanConfig();
+        
+        var settingsToSave = {
+            scan_level: config.scan_level,
+            scan_mode: config.scan_mode,
+            concurrent: config.concurrent,
+            timeout: config.timeout,
+            delay_threshold: config.delay_threshold,
+            crawl: config.crawl,
+            dir_scan: config.dir_scan,
+            param_fuzz: config.param_fuzz,
+            smart_dict: config.smart_dict,
+            include_response: config.include_response,
+            verify_ssl: config.verify_ssl,
+            prefer_https: config.prefer_https,
+            method: config.method,
+            crawl_depth: config.crawl_depth,
+            crawl_pages: config.crawl_pages,
+            dir_threads: config.dir_threads,
+            dir_filter_status: config.dir_filter_status,
+            target_os: config.target_os,
+            tech_stack: config.tech_stack || [],
+            payload_types: config.payload_types || [],
+            encodings: config.encodings || [],
+            bypass_techniques: config.bypass_techniques || []
+        };
+        
+        localStorage.setItem('rce_hawkeye_settings', JSON.stringify(settingsToSave));
+        showNotification('Settings saved successfully', 'success');
+    } catch (e) {
+        console.error('Failed to save settings:', e);
+        showNotification('Failed to save settings: ' + e.message, 'error');
+    }
+}
+
+function loadScanSettings() {
+    try {
+        var saved = localStorage.getItem('rce_hawkeye_settings');
+        if (!saved) return;
+        
+        var settings = JSON.parse(saved);
+        
+        function setVal(id, val) {
+            var el = document.getElementById(id);
+            if (el && val !== undefined && val !== null) el.value = val;
+        }
+        function setChecked(id, val) {
+            var el = document.getElementById(id);
+            if (el && val !== undefined) el.checked = val;
+        }
+        
+        setVal('scanLevel', settings.scan_level);
+        setVal('scanMode', settings.scan_mode);
+        setVal('concurrent', settings.concurrent);
+        setVal('timeout', settings.timeout);
+        setVal('delayThreshold', settings.delay_threshold);
+        
+        setChecked('optCrawl', settings.crawl);
+        setChecked('optDirScan', settings.dir_scan);
+        setChecked('optParamFuzz', settings.param_fuzz);
+        setChecked('optSmartDict', settings.smart_dict);
+        setChecked('optIncludeResponse', settings.include_response);
+        setChecked('optVerifySSL', settings.verify_ssl);
+        setChecked('optPreferHTTPS', settings.prefer_https);
+        
+        setVal('httpMethod', settings.method || settings.http_method);
+        setVal('crawlDepth', settings.crawl_depth);
+        setVal('crawlPages', settings.crawl_pages);
+        setVal('dirThreads', settings.dir_threads);
+        setVal('dirFilterStatus', settings.dir_filter_status);
+        setVal('targetOS', settings.target_os);
+        
+        if (settings.tech_stack && Array.isArray(settings.tech_stack)) {
+            document.querySelectorAll('input[name="techStack"]').forEach(function(cb) {
+                cb.checked = settings.tech_stack.indexOf(cb.value) !== -1;
+            });
+        }
+        
+        if (settings.payload_types && Array.isArray(settings.payload_types)) {
+            document.querySelectorAll('input[name="payloadType"]').forEach(function(cb) {
+                cb.checked = settings.payload_types.indexOf(cb.value) !== -1;
+            });
+        }
+        
+        if (settings.encodings && Array.isArray(settings.encodings)) {
+            document.querySelectorAll('input[name="encoding"]').forEach(function(cb) {
+                cb.checked = settings.encodings.indexOf(cb.value) !== -1;
+            });
+        }
+        
+        if (settings.bypass_techniques && Array.isArray(settings.bypass_techniques)) {
+            document.querySelectorAll('input[name="bypass"]').forEach(function(cb) {
+                cb.checked = settings.bypass_techniques.indexOf(cb.value) !== -1;
+            });
+        }
+    } catch (e) {
+        console.error('Failed to load settings:', e);
+    }
+}
+
+function showNotification(message, type) {
+    var notification = document.createElement('div');
+    notification.className = 'notification ' + (type || 'info');
+    notification.innerHTML = '<span>' + message + '</span><button onclick="this.parentElement.remove()" style="background:none;border:none;color:white;cursor:pointer;font-size:18px;">&times;</button>';
+    notification.style.cssText = 'position: fixed; top: 20px; right: 20px; padding: 12px 20px; background: ' + 
+        (type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : type === 'warning' ? '#f59e0b' : '#06b6d4') + 
+        '; color: white; border-radius: 8px; z-index: 10000; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);';
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(function() {
+        if (notification.parentElement) {
+            notification.remove();
+        }
+    }, 3000);
+}
+
+function resetScanForm() {
+    document.getElementById('targetUrl').value = '';
+    document.getElementById('urlFile').value = '';
+    document.getElementById('allowDomains').value = '';
+    document.getElementById('blockDomains').value = '';
+    document.getElementById('scanLevel').value = '2';
+    document.getElementById('scanMode').value = 'echo';
+    document.getElementById('concurrent').value = '10';
+    document.getElementById('timeout').value = '10';
+    document.getElementById('delayThreshold').value = '4';
+    document.getElementById('retries').value = '2';
+    document.getElementById('optCrawl').checked = false;
+    document.getElementById('optDirScan').checked = true;
+    document.getElementById('optParamFuzz').checked = true;
+    document.getElementById('optSmartDict').checked = true;
+    document.getElementById('optIncludeResponse').checked = false;
+    document.getElementById('optVerifySSL').checked = false;
+    document.getElementById('optRestrictRoot').checked = true;
+    document.getElementById('optFollowRedirect').checked = true;
+    document.getElementById('optAutoDetect').checked = false;
+}
+
+function parseTargetUrl() {
+    var url = document.getElementById('targetUrl').value;
+    if (!url) {
+        return;
+    }
+    
+    try {
+        var parsed = new URL(url);
+        var domain = parsed.hostname;
+        var allowDomains = document.getElementById('allowDomains');
+        if (allowDomains && !allowDomains.value) {
+            allowDomains.value = domain;
+        }
+        addScanLog('info', '[INFO] Parsed URL: domain=' + domain + ', path=' + parsed.pathname);
+    } catch (e) {
+        addScanLog('warning', '[WARN] Invalid URL format');
+    }
+}
+
 async function startScan() {
     var config = getScanConfig();
     
     if (!config.url && (!config.urls || config.urls.length === 0) && !config.raw_traffic) {
-        alert(t('scan.targetRequired') || 'Please enter a target URL, URLs file, or traffic file');
+        alert(safeT('scan.targetRequired', 'Please enter a target URL, URLs file, or traffic file'));
         return;
     }
     
     var btn = document.getElementById('startScanBtn');
     btn.disabled = true;
-    btn.innerHTML = '<span class="loading-spinner"></span><span>' + (t('scan.starting') || 'Starting...') + '</span>';
+    btn.innerHTML = '<span class="loading-spinner"></span><span>' + safeT('scan.starting', 'Starting...') + '</span>';
+    
+    clearScanLog();
+    addScanLog('info', '[INFO] Starting scan...');
     
     try {
         var response = await fetch('/api/scan', {
@@ -1029,18 +1340,45 @@ async function startScan() {
         
         if (data.success) {
             currentScanId = data.scan_id;
+            addScanLog('success', '[OK] Scan started with ID: ' + data.scan_id);
             var progressSection = document.getElementById('progressSection');
             if (progressSection) progressSection.style.display = 'block';
             startProgressRefresh();
         } else {
+            addScanLog('error', '[ERROR] ' + data.error);
             alert('Error: ' + data.error);
             btn.disabled = false;
-            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg><span>' + (t('scan.startScan') || 'Start Scan') + '</span>';
+            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg><span>' + safeT('scan.startScan', 'Start Scan') + '</span>';
         }
     } catch (error) {
+        addScanLog('error', '[ERROR] Failed to start scan: ' + error.message);
         alert('Failed to start scan: ' + error.message);
         btn.disabled = false;
-        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg><span>' + (t('scan.startScan') || 'Start Scan') + '</span>';
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg><span>' + safeT('scan.startScan', 'Start Scan') + '</span>';
+    }
+}
+
+function addScanLog(type, message) {
+    var terminal = document.getElementById('scanTerminal');
+    if (!terminal) return;
+    
+    var line = document.createElement('div');
+    line.className = 'terminal-line ' + type;
+    var timestamp = new Date().toLocaleTimeString();
+    line.textContent = '[' + timestamp + '] ' + message;
+    terminal.appendChild(line);
+    terminal.scrollTop = terminal.scrollHeight;
+    
+    var maxLines = 500;
+    while (terminal.children.length > maxLines) {
+        terminal.removeChild(terminal.firstChild);
+    }
+}
+
+function clearScanLog() {
+    var terminal = document.getElementById('scanTerminal');
+    if (terminal) {
+        terminal.innerHTML = '<div class="terminal-line info">[INFO] Ready to scan...</div>';
     }
 }
 
@@ -1048,6 +1386,12 @@ function startProgressRefresh() {
     if (refreshInterval) {
         clearInterval(refreshInterval);
     }
+    
+    var lastTask = '';
+    var lastVulnCount = 0;
+    var lastExtra = null;
+    var logCount = 0;
+    var maxLogsPerScan = 200;
     
     refreshInterval = setInterval(async function() {
         if (!currentScanId) {
@@ -1060,58 +1404,119 @@ function startProgressRefresh() {
             var data = await response.json();
             
             if (data.success) {
-                updateProgress(data.status);
+                var statusData = data;
                 
-                if (data.status.status === 'completed' || data.status.status === 'error' || data.status.status === 'stopped') {
+                updateProgress(statusData);
+                
+                var extra = statusData.extra || {};
+                var phase = extra.phase || '';
+                
+                if (phase === 'response' && logCount < maxLogsPerScan) {
+                    var param = extra.param || '';
+                    var method = extra.method || '';
+                    var payload = extra.payload || '';
+                    var respLen = extra.resp_len || 0;
+                    var found = extra.found || false;
+                    
+                    if (found) {
+                        addScanLog('warning', '[VULN] ' + method + ' ' + param + '=' + payload + ' (matched!)');
+                    } else if (logCount % 10 === 0) {
+                        addScanLog('info', '[SCAN] ' + method + ' ' + param + '=' + payload.substring(0, 20) + '... (len:' + respLen + ')');
+                    }
+                    logCount++;
+                } else if (phase === 'start') {
+                    var params = extra.params || 0;
+                    var payloads = extra.payloads || 0;
+                    addScanLog('info', '[INFO] Starting scan with ' + params + ' params, ' + payloads + ' payloads');
+                } else if (phase === 'tasks_created') {
+                    var taskCount = extra.task_count || 0;
+                    addScanLog('info', '[INFO] Created ' + taskCount + ' scan tasks');
+                } else if (phase === 'payloads_final') {
+                    var count = extra.count || 0;
+                    addScanLog('info', '[INFO] Loaded ' + count + ' payloads');
+                }
+                
+                if (statusData.vuln_count !== undefined && statusData.vuln_count > lastVulnCount) {
+                    var newVulns = statusData.vuln_count - lastVulnCount;
+                    addScanLog('warning', '[VULN] Found ' + newVulns + ' new vulnerability(s)! Total: ' + statusData.vuln_count);
+                    lastVulnCount = statusData.vuln_count;
+                }
+                
+                var scanStatus = statusData.status || '';
+                
+                if (scanStatus === 'completed' || scanStatus === 'Completed') {
                     clearInterval(refreshInterval);
+                    addScanLog('success', '[OK] Scan completed! Found ' + (statusData.vuln_count || 0) + ' vulnerability(s)');
                     var btn = document.getElementById('startScanBtn');
                     if (btn) {
                         btn.disabled = false;
-                        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg><span>' + (t('scan.startScan') || 'Start Scan') + '</span>';
+                        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg><span>' + safeT('scan.startScan', 'Start Scan') + '</span>';
                     }
                     loadStats();
+                    loadHistory();
                     
-                    if (data.status.vulns && data.status.vulns.length > 0) {
-                        displayVulnerabilities(data.status.vulns);
+                    if (statusData.vulns && statusData.vulns.length > 0) {
+                        displayVulnerabilities(statusData.vulns);
+                    }
+                } else if (scanStatus === 'error' || scanStatus === 'Error') {
+                    clearInterval(refreshInterval);
+                    addScanLog('error', '[ERROR] Scan failed: ' + (data.status.error || 'Unknown error'));
+                    var btn = document.getElementById('startScanBtn');
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg><span>' + safeT('scan.startScan', 'Start Scan') + '</span>';
+                    }
+                } else if (scanStatus === 'stopped' || scanStatus === 'Stopped') {
+                    clearInterval(refreshInterval);
+                    addScanLog('warning', '[WARN] Scan was stopped');
+                    var btn = document.getElementById('startScanBtn');
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg><span>' + safeT('scan.startScan', 'Start Scan') + '</span>';
                     }
                 }
             }
         } catch (error) {
             console.error('Failed to refresh progress:', error);
         }
-    }, 1000);
+    }, 500);
 }
 
 function updateProgress(status) {
     var progressBar = document.getElementById('progressBar');
     var progressStatus = document.getElementById('progressStatus');
     var progressPercent = document.getElementById('progressPercent');
+    var progressDetail = document.getElementById('progressDetail');
     
-    if (progressBar) progressBar.style.width = status.progress + '%';
-    if (progressPercent) progressPercent.textContent = status.progress + '%';
+    var progress = Math.min(Math.max(status.progress || 0, 0), 100);
     
-    var statusText = status.current_task || t('progress.scanning');
-    if (status.current_url) {
-        statusText += '\n' + t('scan.currentUrl') + ': ' + status.current_url;
-    }
-    if (status.current_param) {
-        statusText += '\n' + t('scan.currentParam') + ': ' + status.current_param;
-    }
-    if (status.scanned_count !== undefined && status.total_count !== undefined) {
-        statusText += '\n' + t('scan.progress') + ': ' + status.scanned_count + '/' + status.total_count;
-    }
-    if (status.vulns_found !== undefined) {
-        statusText += '\n' + t('scan.vulnsFound') + ': ' + status.vulns_found;
+    if (progressBar) progressBar.style.width = progress + '%';
+    if (progressPercent) progressPercent.textContent = progress + '%';
+    
+    var statusText = status.current_task || '';
+    var scanStatus = status.status || '';
+    
+    if (scanStatus === 'completed' || scanStatus === 'Completed') {
+        statusText = safeT('scan.completed', 'Scan Completed');
+    } else if (scanStatus === 'error' || scanStatus === 'Error') {
+        statusText = safeT('scan.error', 'Scan Error');
+    } else if (scanStatus === 'stopped' || scanStatus === 'Stopped') {
+        statusText = safeT('scan.stopped', 'Scan Stopped');
     }
     
     if (progressStatus) {
-        progressStatus.innerHTML = '';
-        var lines = statusText.split('\n');
-        lines.forEach(function(line) {
-            var div = document.createElement('div');
-            div.textContent = line;
-            progressStatus.appendChild(div);
-        });
+        progressStatus.textContent = statusText;
+    }
+    
+    if (progressDetail) {
+        var detailHtml = '';
+        if (status.scanned !== undefined && status.total_targets !== undefined && status.total_targets > 0) {
+            detailHtml += '<div class="progress-stat"><span>' + safeT('scan.progress', 'Progress') + ':</span> <span>' + status.scanned + '/' + status.total_targets + '</span></div>';
+        }
+        if (status.vuln_count !== undefined) {
+            detailHtml += '<div class="progress-stat"><span>' + safeT('scan.vulnsFound', 'Vulnerabilities Found') + ':</span> <span class="vuln-count">' + status.vuln_count + '</span></div>';
+        }
+        progressDetail.innerHTML = detailHtml;
     }
 }
 
@@ -1121,7 +1526,7 @@ function displayVulnerabilities(vulns) {
     if (!list) return;
     
     if (!vulns || vulns.length === 0) {
-        list.innerHTML = '<div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><p>' + (t('results.noResults') || 'No results') + '</p></div>';
+        list.innerHTML = '<div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><p>' + safeT('results.noResults', 'No results') + '</p></div>';
         return;
     }
     
@@ -1396,31 +1801,137 @@ async function loadReports() {
         if (!list) return;
         
         if (!data.reports || data.reports.length === 0) {
-            list.innerHTML = '<p class="text-muted">' + (t('common.noData') || 'No data') + '</p>';
+            list.innerHTML = '<p class="text-muted">' + safeT('reports.noReports', 'No reports found') + '</p>';
             return;
         }
         
-        var html = '';
+        var html = '<div class="reports-toolbar">' +
+            '<label class="checkbox-label">' +
+            '<input type="checkbox" id="selectAllReports" onchange="toggleSelectAllReports()">' +
+            '<span>' + safeT('reports.selectAll', 'Select All') + '</span>' +
+            '</label>' +
+            '<button class="btn-secondary" onclick="deleteSelectedReports()" id="deleteSelectedReportsBtn" style="display:none;">' + safeT('reports.deleteSelected', 'Delete Selected') + '</button>' +
+            '</div>' +
+            '<div class="reports-list">';
+        
         data.reports.forEach(function(r) {
             var sizeKB = Math.round(r.size / 1024);
             var modified = new Date(r.modified).toLocaleString();
             var typeClass = (r.type || 'json').toLowerCase();
-            html += '<div class="report-card">' +
-                '<div class="report-card-header">' +
-                '<span class="report-card-name">' + escapeHtml(r.name) + '</span>' +
-                '<span class="report-card-badge ' + typeClass + '">' + (r.type || 'JSON').toUpperCase() + '</span>' +
+            
+            html += '<div class="report-item">' +
+                '<div class="report-item-header">' +
+                '<input type="checkbox" class="report-select" value="' + escapeHtml(r.name) + '" onchange="updateReportSelectedCount()">' +
+                '<span class="report-badge ' + typeClass + '">' + (r.type || 'JSON').toUpperCase() + '</span>' +
                 '</div>' +
-                '<div class="report-card-meta">' + sizeKB + ' KB | ' + modified + '</div>' +
-                '<div class="report-card-actions">' +
-                '<a href="/api/reports/' + encodeURIComponent(r.name) + '" target="_blank">' + (t('reports.view') || 'View') + '</a>' +
-                '<a href="/api/reports/' + encodeURIComponent(r.name) + '?download=1">' + (t('reports.download') || 'Download') + '</a>' +
+                '<div class="report-item-name">' + escapeHtml(r.name) + '</div>' +
+                '<div class="report-item-meta">' +
+                '<span>' + sizeKB + ' KB</span>' +
+                '<span>' + modified + '</span>' +
+                '</div>' +
+                '<div class="report-item-actions">' +
+                '<a href="/api/reports/' + encodeURIComponent(r.name) + '" target="_blank" class="btn-link">' + safeT('reports.view', 'View') + '</a>' +
+                '<a href="/api/reports/' + encodeURIComponent(r.name) + '?download=1" class="btn-link">' + safeT('reports.download', 'Download') + '</a>' +
                 '</div>' +
                 '</div>';
         });
         
+        html += '</div>';
         list.innerHTML = html;
     } catch (error) {
         console.error('Failed to load reports:', error);
+    }
+}
+
+function toggleSelectAllReports() {
+    var selectAll = document.getElementById('selectAllReports');
+    var isChecked = selectAll ? selectAll.checked : false;
+    document.querySelectorAll('.report-select').forEach(function(cb) {
+        cb.checked = isChecked;
+    });
+    updateReportSelectedCount();
+}
+
+function updateReportSelectedCount() {
+    var count = document.querySelectorAll('.report-select:checked').length;
+    var btn = document.getElementById('deleteSelectedReportsBtn');
+    var selectAll = document.getElementById('selectAllReports');
+    var total = document.querySelectorAll('.report-select').length;
+    
+    if (btn) btn.style.display = count > 0 ? 'inline-flex' : 'none';
+    if (selectAll) selectAll.checked = count > 0 && count === total;
+}
+
+async function deleteSelectedReports() {
+    var selectedFiles = [];
+    document.querySelectorAll('.report-select:checked').forEach(function(cb) {
+        selectedFiles.push(cb.value);
+    });
+    
+    if (selectedFiles.length === 0) {
+        alert(safeT('reports.selectFirst', 'Please select reports first'));
+        return;
+    }
+    
+    if (!confirm(safeT('reports.confirmDelete', 'Delete selected reports?'))) {
+        return;
+    }
+    
+    try {
+        var response = await fetch('/api/reports/batch-delete', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ files: selectedFiles })
+        });
+        
+        if (response.status === 401) {
+            alert(safeT('common.sessionExpired', 'Session expired'));
+            window.location.href = '/login';
+            return;
+        }
+        
+        var data = await response.json();
+        
+        if (data.success) {
+            alert(safeT('reports.deleteSuccess', 'Reports deleted successfully'));
+            loadReports();
+        } else {
+            alert(safeT('reports.deleteFailed', 'Failed to delete') + ': ' + (data.error || ''));
+        }
+    } catch (error) {
+        alert(safeT('reports.deleteFailed', 'Failed to delete') + ': ' + error.message);
+    }
+}
+
+async function deleteReport(filename) {
+    if (!confirm('Are you sure you want to delete this report?')) {
+        return;
+    }
+    
+    try {
+        var response = await fetch('/api/reports/delete/' + encodeURIComponent(filename), {
+            method: 'POST',
+            credentials: 'same-origin'
+        });
+        
+        if (response.status === 401) {
+            alert('Session expired, please login again');
+            window.location.href = '/login';
+            return;
+        }
+        
+        var data = await response.json();
+        
+        if (data.success) {
+            alert('Report deleted successfully');
+            loadReports();
+        } else {
+            alert('Error: ' + (data.error || data.message || 'Delete failed'));
+        }
+    } catch (error) {
+        console.error('Delete report error:', error);
+        alert('Delete failed: ' + error.message);
     }
 }
 
@@ -1434,7 +1945,7 @@ async function loadActiveScans() {
         if (!list) return;
         
         if (!data.scans || data.scans.length === 0) {
-            list.innerHTML = '<p class="text-muted">' + (t('common.noData') || 'No data') + '</p>';
+            list.innerHTML = '<p class="text-muted">' + safeT('common.noData', 'No data') + '</p>';
             return;
         }
         
@@ -1460,34 +1971,50 @@ async function loadActiveScans() {
 }
 
 async function loadHistory() {
+    console.log('[DEBUG] loadHistory called');
     try {
         var response = await fetch('/api/history');
         var data = await response.json();
         
+        console.log('[DEBUG] loadHistory response:', data);
+        console.log('[DEBUG] history count:', data.history ? data.history.length : 0);
+        
         var list = document.getElementById('historyList');
         
-        if (!list) return;
+        console.log('[DEBUG] historyList element:', list);
+        
+        if (!list) {
+            console.error('[DEBUG] historyList element not found!');
+            return;
+        }
         
         if (!data.history || data.history.length === 0) {
+            console.log('[DEBUG] No history data');
             list.innerHTML = '<div class="empty-state">' +
                 '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3h18v18H3z"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>' +
-                '<p>' + (t('history.noData') || 'No scan history') + '</p>' +
-                '<span class="sub-text">' + (t('history.noDataHint') || 'Start a new scan to see results here') + '</span>' +
+                '<p>' + safeT('history.noData', 'No scan history') + '</p>' +
+                '<span class="sub-text">' + safeT('history.noDataHint', 'Start a new scan to see results here') + '</span>' +
                 '</div>';
             return;
         }
         
+        console.log('[DEBUG] Rendering ' + data.history.length + ' history items');
+        
         var html = '';
+        
         data.history.forEach(function(h) {
             var statusClass = h.status === 'completed' ? 'completed' : h.status === 'running' ? 'running' : 'error';
             var iconClass = h.status === 'completed' ? '' : h.status === 'running' ? 'cyan' : 'red';
             var vulnCountClass = (h.vuln_count || 0) > 0 ? ((h.critical_vulns || 0) > 0 ? 'critical' : '') : '';
             
-            html += '<div class="history-item" onclick="showHistoryDetail(\'' + h.id + '\')">' +
-                '<div class="history-icon ' + iconClass + '">' +
+            html += '<div class="history-item" data-id="' + escapeHtml(h.id) + '">' +
+                '<div class="history-checkbox">' +
+                '<input type="checkbox" class="history-select" value="' + escapeHtml(h.id) + '">' +
+                '</div>' +
+                '<div class="history-icon ' + iconClass + '" data-action="detail" data-id="' + escapeHtml(h.id) + '">' +
                 '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>' +
                 '</div>' +
-                '<div class="history-content">' +
+                '<div class="history-content" data-action="detail" data-id="' + escapeHtml(h.id) + '">' +
                 '<div class="history-target">' + escapeHtml(h.target) + '</div>' +
                 '<div class="history-meta">' +
                 '<span class="history-meta-item">' +
@@ -1500,19 +2027,184 @@ async function loadHistory() {
                 '</span>' +
                 '</div>' +
                 '</div>' +
-                '<div class="history-vuln-count ' + vulnCountClass + '">' +
+                '<div class="history-vuln-count ' + vulnCountClass + '" data-action="detail" data-id="' + escapeHtml(h.id) + '">' +
                 '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>' +
                 (h.vuln_count || 0) +
                 '</div>' +
-                '<span class="history-status ' + statusClass + '">' + h.status + '</span>' +
+                '<span class="history-status ' + statusClass + '" data-action="detail" data-id="' + escapeHtml(h.id) + '">' + h.status + '</span>' +
+                '<button class="history-delete-btn" data-action="delete" data-id="' + escapeHtml(h.id) + '" title="Delete">' +
+                '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+                '</button>' +
                 '</div>';
         });
         
         list.innerHTML = html;
+        
+        // Add event delegation for history items
+        list.onclick = function(e) {
+            var target = e.target.closest('[data-action]');
+            if (!target) return;
+            
+            var action = target.getAttribute('data-action');
+            var id = target.getAttribute('data-id');
+            
+            if (action === 'delete') {
+                e.stopPropagation();
+                doDeleteHistory(id);
+            } else if (action === 'detail') {
+                e.stopPropagation();
+                showHistoryDetail(id);
+            }
+        };
+        
+        // Add checkbox change handlers
+        list.querySelectorAll('.history-select').forEach(function(cb) {
+            cb.onchange = function() {
+                updateSelectedCount();
+            };
+        });
+        
         loadHistoryStats();
         loadHistoryDates();
     } catch (error) {
         console.error('Failed to load history:', error);
+    }
+}
+
+function toggleSelectAllHistory() {
+    var selectAll = document.getElementById('selectAllHistory');
+    var isChecked = selectAll ? selectAll.checked : false;
+    document.querySelectorAll('.history-select').forEach(function(cb) {
+        cb.checked = isChecked;
+    });
+    updateSelectedCount();
+}
+
+function updateSelectedCount() {
+    var count = document.querySelectorAll('.history-select:checked').length;
+    var countEl = document.getElementById('selectedCount');
+    var batchActions = document.getElementById('historyBatchActions');
+    
+    if (countEl) countEl.textContent = count;
+    if (batchActions) {
+        batchActions.style.display = count > 0 ? 'flex' : 'none';
+    }
+    
+    var selectAll = document.getElementById('selectAllHistory');
+    var total = document.querySelectorAll('.history-select').length;
+    if (selectAll) {
+        selectAll.checked = count > 0 && count === total;
+    }
+}
+
+function selectAllHistory() {
+    document.querySelectorAll('.history-select').forEach(function(cb) {
+        cb.checked = true;
+    });
+    updateSelectedCount();
+}
+
+function deselectAllHistory() {
+    document.querySelectorAll('.history-select').forEach(function(cb) {
+        cb.checked = false;
+    });
+    updateSelectedCount();
+}
+
+async function doDeleteHistory(id) {
+    console.log('[DEBUG] doDeleteHistory called with id:', id);
+    
+    if (!id) {
+        console.error('[DEBUG] doDeleteHistory: id is empty');
+        alert('Error: Invalid ID');
+        return;
+    }
+    
+    if (!confirm(safeT('history.confirmDelete', 'Are you sure you want to delete this record?'))) {
+        return;
+    }
+    
+    try {
+        console.log('[DEBUG] Sending delete request for id:', id);
+        
+        var response = await fetch('/api/history/delete/' + encodeURIComponent(id), {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        console.log('[DEBUG] Response status:', response.status);
+        
+        if (response.status === 401) {
+            alert(safeT('common.sessionExpired', 'Session expired, please login again'));
+            window.location.href = '/login';
+            return;
+        }
+        
+        var data = await response.json();
+        console.log('[DEBUG] Response data:', data);
+        
+        if (data.success) {
+            alert(safeT('history.deleteSuccess', 'Deleted successfully'));
+            loadHistory();
+        } else {
+            alert(safeT('history.deleteFailed', 'Delete failed') + ': ' + (data.error || data.message || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('[DEBUG] Delete error:', error);
+        alert(safeT('history.deleteFailed', 'Delete failed') + ': ' + error.message);
+    }
+}
+
+function deleteSingleHistory(id) {
+    doDeleteHistory(id);
+}
+
+async function deleteSelectedHistory() {
+    var selectedIds = [];
+    document.querySelectorAll('.history-select:checked').forEach(function(cb) {
+        selectedIds.push(cb.value);
+    });
+    
+    if (selectedIds.length === 0) {
+        alert(safeT('history.selectFirst', 'Please select records to delete'));
+        return;
+    }
+    
+    if (!confirm(safeT('history.confirmDelete', 'Delete selected items?'))) {
+        return;
+    }
+    
+    try {
+        var response = await fetch('/api/history/batch-delete', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ ids: selectedIds })
+        });
+        
+        if (response.status === 401) {
+            alert(safeT('common.sessionExpired', 'Session expired, please login again'));
+            window.location.href = '/login';
+            return;
+        }
+        
+        var data = await response.json();
+        console.log('[DEBUG] Batch delete response:', data);
+        
+        if (data.success) {
+            alert(safeT('history.deleteSuccess', 'Deleted successfully'));
+            loadHistory();
+        } else {
+            alert(safeT('history.deleteFailed', 'Delete failed') + ': ' + (data.error || data.message || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('[DEBUG] Batch delete error:', error);
+        alert(safeT('history.deleteFailed', 'Delete failed') + ': ' + error.message);
     }
 }
 
@@ -1522,10 +2214,15 @@ async function loadHistoryStats() {
         var data = await response.json();
         
         if (data.stats) {
-            document.getElementById('totalScans').textContent = data.stats.total_scans || 0;
-            document.getElementById('totalDomains').textContent = data.stats.domains_scanned || 0;
-            document.getElementById('totalVulns').textContent = data.stats.total_vulns || 0;
-            document.getElementById('totalCritical').textContent = data.stats.critical_vulns || 0;
+            var totalScans = document.getElementById('totalScans');
+            var totalDomains = document.getElementById('totalDomains');
+            var totalVulns = document.getElementById('totalVulns');
+            var totalCritical = document.getElementById('totalCritical');
+            
+            if (totalScans) totalScans.textContent = data.stats.total_scans || 0;
+            if (totalDomains) totalDomains.textContent = data.stats.domains_scanned || 0;
+            if (totalVulns) totalVulns.textContent = data.stats.total_vulns || 0;
+            if (totalCritical) totalCritical.textContent = data.stats.critical_vulns || 0;
         }
     } catch (error) {
         console.error('Failed to load history stats:', error);
@@ -1578,8 +2275,8 @@ async function searchHistory() {
         if (!data.results || data.results.length === 0) {
             list.innerHTML = '<div class="empty-state">' +
                 '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3h18v18H3z"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>' +
-                '<p>' + (t('history.noData') || 'No scan history') + '</p>' +
-                '<span class="sub-text">' + (t('history.noDataHint') || 'Start a new scan to see results here') + '</span>' +
+                '<p>' + safeT('history.noData', 'No scan history') + '</p>' +
+                '<span class="sub-text">' + safeT('history.noDataHint', 'Start a new scan to see results here') + '</span>' +
                 '</div>';
             return;
         }
@@ -1654,34 +2351,34 @@ async function showDomainDetail(domain) {
         var data = await response.json();
         
         if (!data.stats) {
-            alert(t('common.error') || 'Domain not found');
+            alert(safeT('common.error', 'Domain not found'));
             return;
         }
         
         var stats = data.stats;
         var html = '<div class="detail-section">' +
-            '<h4><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/></svg> ' + (t('history.domainInfo') || 'Domain Information') + '</h4>' +
+            '<h4><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/></svg> ' + safeT('history.domainInfo', 'Domain Information') + '</h4>' +
             '<div class="detail-grid">' +
-            '<div class="detail-item"><span class="detail-label">' + (t('history.domain') || 'Domain') + '</span><span class="detail-value">' + escapeHtml(domain) + '</span></div>' +
-            '<div class="detail-item"><span class="detail-label">' + (t('history.totalScans') || 'Total Scans') + '</span><span class="detail-value">' + stats.total_scans + '</span></div>' +
-            '<div class="detail-item"><span class="detail-label">' + (t('history.completed') || 'Completed') + '</span><span class="detail-value" style="color: var(--accent-green);">' + stats.completed_scans + '</span></div>' +
-            '<div class="detail-item"><span class="detail-label">' + (t('history.error') || 'Failed') + '</span><span class="detail-value" style="color: var(--accent-red);">' + stats.failed_scans + '</span></div>' +
+            '<div class="detail-item"><span class="detail-label">' + safeT('history.domain', 'Domain') + '</span><span class="detail-value">' + escapeHtml(domain) + '</span></div>' +
+            '<div class="detail-item"><span class="detail-label">' + safeT('history.totalScans', 'Total Scans') + '</span><span class="detail-value">' + stats.total_scans + '</span></div>' +
+            '<div class="detail-item"><span class="detail-label">' + safeT('proxy.testSuccess', 'Connection successful') + '</span><span class="detail-value" style="color: var(--accent-green);">' + stats.completed_scans + '</span></div>' +
+            '<div class="detail-item"><span class="detail-label">' + safeT('proxy.testFailed', 'Connection failed') + '</span><span class="detail-value" style="color: var(--accent-red);">' + stats.failed_scans + '</span></div>' +
             '</div>' +
             '</div>';
         
         html += '<div class="detail-section">' +
-            '<h4><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> ' + (t('history.vulnSummary') || 'Vulnerability Summary') + '</h4>' +
+            '<h4><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> ' + safeT('history.vulnSummary', 'Vulnerability Summary') + '</h4>' +
             '<div class="detail-grid">' +
-            '<div class="detail-item"><span class="detail-label">' + (t('history.total') || 'Total') + '</span><span class="detail-value">' + stats.total_vulns + '</span></div>' +
-            '<div class="detail-item"><span class="detail-label" style="color: var(--accent-red);">' + (t('history.critical') || 'Critical') + '</span><span class="detail-value" style="color: var(--accent-red);">' + stats.critical_vulns + '</span></div>' +
-            '<div class="detail-item"><span class="detail-label" style="color: var(--accent-yellow);">' + (t('history.high') || 'High') + '</span><span class="detail-value" style="color: var(--accent-yellow);">' + stats.high_vulns + '</span></div>' +
-            '<div class="detail-item"><span class="detail-label" style="color: var(--accent-cyan);">' + (t('history.medium') || 'Medium') + '</span><span class="detail-value" style="color: var(--accent-cyan);">' + stats.medium_vulns + '</span></div>' +
-            '<div class="detail-item"><span class="detail-label">' + (t('history.low') || 'Low') + '</span><span class="detail-value">' + stats.low_vulns + '</span></div>' +
+            '<div class="detail-item"><span class="detail-label">' + safeT('history.total', 'Total') + '</span><span class="detail-value">' + stats.total_vulns + '</span></div>' +
+            '<div class="detail-item"><span class="detail-label" style="color: var(--accent-red);">' + safeT('proxy.testFailed', 'Connection failed') + '</span><span class="detail-value" style="color: var(--accent-red);">' + stats.critical_vulns + '</span></div>' +
+            '<div class="detail-item"><span class="detail-label" style="color: var(--accent-yellow);">' + safeT('history.high', 'High') + '</span><span class="detail-value" style="color: var(--accent-yellow);">' + stats.high_vulns + '</span></div>' +
+            '<div class="detail-item"><span class="detail-label" style="color: var(--accent-cyan);">' + safeT('history.medium', 'Medium') + '</span><span class="detail-value" style="color: var(--accent-cyan);">' + stats.medium_vulns + '</span></div>' +
+            '<div class="detail-item"><span class="detail-label">' + safeT('history.low', 'Low') + '</span><span class="detail-value">' + stats.low_vulns + '</span></div>' +
             '</div>' +
             '</div>';
         
         if (stats.vulnerabilities && stats.vulnerabilities.length > 0) {
-            html += '<div class="detail-section"><h4><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg> ' + (t('scanner.vulnerabilities') || 'Vulnerabilities') + ' (' + stats.vulnerabilities.length + ')</h4>';
+            html += '<div class="detail-section"><h4><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg> ' + safeT('scanner.vulnerabilities', 'Vulnerabilities') + ' (' + stats.vulnerabilities.length + ')</h4>';
             html += '<div class="vuln-list">';
             var displayedVulns = stats.vulnerabilities.slice(0, 20);
             displayedVulns.forEach(function(v) {
@@ -1718,7 +2415,7 @@ function exportHistory() {
 
 function exportSelectedHistory() {
     if (selectedHistoryIds.length === 0) {
-        alert(t('history.selectFirst') || 'Please select items first');
+        alert(safeT('common.error', 'Domain not found'));
         return;
     }
     exportIds = selectedHistoryIds.slice();
@@ -1741,7 +2438,7 @@ async function doExport() {
         
         var blob = await response.blob();
         var url = window.URL.createObjectURL(blob);
-        var a = document.createElement('a');
+        var a = document.createElement('');
         a.href = url;
         a.download = 'scan_history_' + format + '_' + new Date().toISOString().slice(0, 10) + '.' + format;
         a.click();
@@ -1750,29 +2447,8 @@ async function doExport() {
         closeExportModal();
     } catch (error) {
         console.error('Failed to export:', error);
-        alert(t('common.error') || 'Export failed');
+        alert(safeT('common.error', 'Domain not found'));
     }
-}
-
-async function deleteSelectedHistory() {
-    if (selectedHistoryIds.length === 0) {
-        alert(t('history.selectFirst') || 'Please select items first');
-        return;
-    }
-    
-    if (!confirm(t('history.confirmDelete') || 'Delete selected items?')) return;
-    
-    for (var i = 0; i < selectedHistoryIds.length; i++) {
-        try {
-            await fetch('/api/history/delete/' + selectedHistoryIds[i], { method: 'POST' });
-        } catch (e) {
-            console.error('Failed to delete:', e);
-        }
-    }
-    
-    selectedHistoryIds = [];
-    updateBatchActions();
-    loadHistory();
 }
 
 function filterHistory() {
@@ -1784,37 +2460,37 @@ async function showHistoryDetail(id) {
         var response = await fetch('/api/history/detail/' + id);
         var data = await response.json();
         
-        if (!data.scan) {
-            alert(t('common.error') || 'Scan not found');
+        if (!data.success || !data.scan) {
+            alert(safeT('common.error', 'Domain not found'));
             return;
         }
         
         var scan = data.scan;
         var html = '<div class="detail-section">' +
-            '<h4><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> ' + (t('history.basicInfo') || 'Basic Information') + '</h4>' +
+            '<h4><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> ' + safeT('history.basicInfo', 'Basic Information') + '</h4>' +
             '<div class="detail-grid">' +
-            '<div class="detail-item"><span class="detail-label">' + (t('history.target') || 'Target') + '</span><span class="detail-value">' + escapeHtml(scan.target) + '</span></div>' +
-            '<div class="detail-item"><span class="detail-label">' + (t('history.domain') || 'Domain') + '</span><span class="detail-value">' + escapeHtml(scan.domain || 'N/A') + '</span></div>' +
-            '<div class="detail-item"><span class="detail-label">' + (t('history.status') || 'Status') + '</span><span class="detail-value">' + scan.status + '</span></div>' +
-            '<div class="detail-item"><span class="detail-label">' + (t('history.startTime') || 'Start Time') + '</span><span class="detail-value">' + scan.start_time + '</span></div>' +
-            '<div class="detail-item"><span class="detail-label">' + (t('history.duration') || 'Duration') + '</span><span class="detail-value">' + (scan.duration || 0).toFixed(2) + 's</span></div>' +
+            '<div class="detail-item"><span class="detail-label">' + safeT('history.target', 'Target') + '</span><span class="detail-value">' + escapeHtml(scan.target) + '</span></div>' +
+            '<div class="detail-item"><span class="detail-label">' + safeT('history.domain', 'Domain') + '</span><span class="detail-value">' + escapeHtml(scan.domain || 'N/A') + '</span></div>' +
+            '<div class="detail-item"><span class="detail-label">' + safeT('history.status', 'Status') + '</span><span class="detail-value">' + scan.status + '</span></div>' +
+            '<div class="detail-item"><span class="detail-label">' + safeT('history.startTime', 'Start Time') + '</span><span class="detail-value">' + scan.start_time + '</span></div>' +
+            '<div class="detail-item"><span class="detail-label">' + safeT('history.duration', 'Duration') + '</span><span class="detail-value">' + (scan.duration || 0).toFixed(2) + 's</span></div>' +
             '<div class="detail-item"><span class="detail-label">Scan Level</span><span class="detail-value">' + (scan.scan_level || 2) + '</span></div>' +
             '</div>' +
             '</div>';
         
         html += '<div class="detail-section">' +
-            '<h4><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> ' + (t('history.vulnSummary') || 'Vulnerability Summary') + '</h4>' +
+            '<h4><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> ' + safeT('history.vulnSummary', 'Vulnerability Summary') + '</h4>' +
             '<div class="detail-grid">' +
-            '<div class="detail-item"><span class="detail-label">' + (t('history.total') || 'Total') + '</span><span class="detail-value">' + (scan.vuln_count || 0) + '</span></div>' +
-            '<div class="detail-item"><span class="detail-label" style="color: var(--accent-red);">' + (t('history.critical') || 'Critical') + '</span><span class="detail-value" style="color: var(--accent-red);">' + (scan.critical_vulns || 0) + '</span></div>' +
-            '<div class="detail-item"><span class="detail-label" style="color: var(--accent-yellow);">' + (t('history.high') || 'High') + '</span><span class="detail-value" style="color: var(--accent-yellow);">' + (scan.high_vulns || 0) + '</span></div>' +
-            '<div class="detail-item"><span class="detail-label" style="color: var(--accent-cyan);">' + (t('history.medium') || 'Medium') + '</span><span class="detail-value" style="color: var(--accent-cyan);">' + (scan.medium_vulns || 0) + '</span></div>' +
-            '<div class="detail-item"><span class="detail-label">' + (t('history.low') || 'Low') + '</span><span class="detail-value">' + (scan.low_vulns || 0) + '</span></div>' +
+            '<div class="detail-item"><span class="detail-label">' + safeT('history.total', 'Total') + '</span><span class="detail-value">' + (scan.vuln_count || 0) + '</span></div>' +
+            '<div class="detail-item"><span class="detail-label" style="color: var(--accent-red);">' + safeT('history.critical', 'Critical') + '</span><span class="detail-value" style="color: var(--accent-red);">' + (scan.critical_vulns || 0) + '</span></div>' +
+            '<div class="detail-item"><span class="detail-label" style="color: var(--accent-yellow);">' + safeT('history.high', 'High') + '</span><span class="detail-value" style="color: var(--accent-yellow);">' + (scan.high_vulns || 0) + '</span></div>' +
+            '<div class="detail-item"><span class="detail-label" style="color: var(--accent-cyan);">' + safeT('history.medium', 'Medium') + '</span><span class="detail-value" style="color: var(--accent-cyan);">' + (scan.medium_vulns || 0) + '</span></div>' +
+            '<div class="detail-item"><span class="detail-label">' + safeT('history.low', 'Low') + '</span><span class="detail-value">' + (scan.low_vulns || 0) + '</span></div>' +
             '</div>' +
             '</div>';
         
         if (scan.vulnerabilities && scan.vulnerabilities.length > 0) {
-            html += '<div class="detail-section"><h4><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg> ' + (t('scanner.vulnerabilities') || 'Vulnerabilities') + '</h4>';
+            html += '<div class="detail-section"><h4><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg> ' + safeT('scanner.vulnerabilities', 'Vulnerabilities') + '</h4>';
             html += '<div class="vuln-list">';
             scan.vulnerabilities.forEach(function(v) {
                 var severityClass = v.severity || 'low';
@@ -1828,9 +2504,9 @@ async function showHistoryDetail(id) {
         }
         
         html += '<div class="detail-section">' +
-            '<h4><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> ' + (t('history.notes') || 'Notes') + '</h4>' +
+            '<h4><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> ' + safeT('history.basicInfo', 'Basic Information') + '</h4>' +
             '<textarea id="historyNotes" class="input-field" rows="3" style="width: 100%; margin-bottom: 10px;">' + escapeHtml(scan.notes || '') + '</textarea>' +
-            '<button class="btn-primary" onclick="saveHistoryNotes(\'' + id + '\')">' + (t('history.saveNotes') || 'Save Notes') + '</button>' +
+            '<button class="btn-primary" onclick="saveHistoryNotes(\'' + id + '\')">' + safeT('about.download', 'Download') + '</button>' +
             '</div>';
         
         document.getElementById('historyDetailContent').innerHTML = html;
@@ -1847,14 +2523,20 @@ function closeHistoryDetail() {
 async function saveHistoryNotes(id) {
     var notes = document.getElementById('historyNotes').value;
     try {
-        await fetch('/api/history/notes/' + id, {
+        var response = await fetch('/api/history/notes/' + id, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ notes: notes })
         });
-        alert(t('history.notesSaved') || 'Notes saved');
+        var data = await response.json();
+        if (data.success) {
+            alert(safeT('common.saved', 'Saved successfully'));
+        } else {
+            alert(safeT('common.error', 'Failed to save'));
+        }
     } catch (error) {
         console.error('Failed to save notes:', error);
+        alert(safeT('common.error', 'Failed to save'));
     }
 }
 
@@ -1871,7 +2553,7 @@ async function exportHistory() {
         
         var blob = await response.blob();
         var url = window.URL.createObjectURL(blob);
-        var a = document.createElement('a');
+        var a = document.createElement('');
         a.href = url;
         a.download = 'scan_history.' + format;
         a.click();
@@ -1882,7 +2564,7 @@ async function exportHistory() {
 }
 
 async function clearHistory() {
-    showConfirm(t('common.confirmClear') || 'Clear all history?', async function() {
+    showConfirm(safeT('common.error', 'Error') || 'Clear all history?', async function() {
         try {
             await fetch('/api/history/clear', { method: 'POST' });
             loadHistory();
@@ -1935,13 +2617,13 @@ async function saveNotificationConfig() {
         var data = await response.json();
         
         if (data.success) {
-            alert(t('notification.settingsSaved') || 'Notification settings saved');
+            alert(safeT('common.settingsSaved', 'Settings saved successfully'));
         } else {
-            alert(t('common.error') + ': ' + (data.error || 'Unknown error'));
+            alert(safeT('common.error', 'Error') + ': ' + (data.error || 'Unknown error'));
         }
     } catch (error) {
         console.error('Failed to save notification config:', error);
-        alert(t('common.error') || 'Failed to save notification settings');
+        alert(safeT('common.saveFailed', 'Failed to save settings') + ': ' + error.message);
     }
 }
 
@@ -1955,13 +2637,13 @@ async function testNotification(type) {
         var data = await response.json();
         
         if (data.success) {
-            alert(t('notification.testSuccess') || 'Test notification sent successfully');
+            alert(safeT('notification.testSuccess', 'Test notification sent successfully'));
         } else {
-            alert(t('notification.testFailed') + ': ' + (data.errors ? data.errors.join(', ') : 'Unknown error'));
+            alert(safeT('common.error', 'Error') + ': ' + (data.errors ? data.errors.join(', ') : 'Unknown error'));
         }
     } catch (error) {
         console.error('Failed to test notification:', error);
-        alert(t('notification.testFailed') || 'Failed to send test notification');
+        alert(safeT('notification.testFailed', 'Failed to send test notification') + ': ' + error.message);
     }
 }
 
@@ -2076,6 +2758,35 @@ async function loadSettings() {
                 if (el) el.value = s.proxy_username;
             }
             
+            if (s.http_method) {
+                el = document.getElementById('settingsHttpMethod');
+                if (el) el.value = s.http_method;
+            }
+            if (s.http_delay_threshold) {
+                el = document.getElementById('settingsDelayThreshold');
+                if (el) el.value = s.http_delay_threshold;
+            }
+            if (s.http_headers) {
+                el = document.getElementById('settingsHttpHeaders');
+                if (el) el.value = s.http_headers;
+            }
+            if (s.http_user_agent) {
+                el = document.getElementById('settingsHttpUserAgent');
+                if (el) el.value = s.http_user_agent;
+            }
+            if (s.http_prefer_https !== undefined) {
+                el = document.getElementById('settingsPreferHTTPS');
+                if (el) el.checked = s.http_prefer_https;
+            }
+            if (s.http_no_https !== undefined) {
+                el = document.getElementById('settingsNoHTTPS');
+                if (el) el.checked = s.http_no_https;
+            }
+            if (s.http_verify_ssl !== undefined) {
+                el = document.getElementById('settingsVerifySSL');
+                if (el) el.checked = s.http_verify_ssl;
+            }
+            
             if (s.archive_threshold) {
                 el = document.getElementById('dictArchiveThreshold');
                 if (el) el.value = s.archive_threshold;
@@ -2120,7 +2831,7 @@ async function saveSettings() {
     var confirmPassword = document.getElementById('confirmPassword');
     
     if (newPassword && newPassword.value && newPassword.value !== confirmPassword.value) {
-        alert(t('settings.passwordMismatch') || 'Passwords do not match');
+        alert(safeT('settings.passwordMismatch', 'Passwords do not match'));
         return;
     }
     
@@ -2140,6 +2851,13 @@ async function saveSettings() {
         var el = document.getElementById(id);
         return el ? parseFloat(el.value) : def;
     }
+    function getCheckedValues(name) {
+        var values = [];
+        document.querySelectorAll('input[name="' + name + '"]:checked').forEach(function(el) {
+            values.push(el.value);
+        });
+        return values;
+    }
     
     var settings = {
         scan_level: getInt('defaultScanLevel', 2),
@@ -2154,11 +2872,36 @@ async function saveSettings() {
         proxy_username: getVal('settingsProxyUsername', ''),
         proxy_password: getVal('settingsProxyPassword', ''),
         
-        archive_threshold: getInt('dictArchiveThreshold', 30),
+        http_method: getVal('settingsHttpMethod', 'auto'),
+        http_delay_threshold: getFloat('settingsDelayThreshold', 4),
+        http_headers: getVal('settingsHttpHeaders', ''),
+        http_user_agent: getVal('settingsHttpUserAgent', 'RCE-HawkEye/1.1.1'),
+        http_prefer_https: getChecked('settingsPreferHTTPS', true),
+        http_no_https: getChecked('settingsNoHTTPS', false),
+        http_verify_ssl: getChecked('settingsVerifySSL', false),
+        
+        target_os: getVal('settingsTargetOS', 'both'),
+        tech_stack: getCheckedValues('settingsTechStack'),
+        payload_types: getCheckedValues('settingsPayloadType'),
+        custom_payloads: getVal('settingsCustomPayloads', ''),
+        custom_wordlist: getVal('settingsCustomWordlist', ''),
+        
+        crawl_depth: getInt('settingsCrawlDepth', 2),
+        crawl_pages: getInt('settingsCrawlPages', 100),
+        dir_threads: getInt('settingsDirThreads', 10),
+        dir_filter_status: getVal('settingsDirFilterStatus', '200'),
+        dir_filter_ext: getVal('settingsDirFilterExt', ''),
+        dir_filter_pattern: getVal('settingsDirFilterPattern', ''),
+        dir_wordlist: getVal('settingsDirWordlist', ''),
+        archive_threshold: getInt('settingsArchiveThreshold', 30),
+        adv_output_format: getVal('settingsOutputFormat', 'html'),
+        adv_output_dir: getVal('settingsOutputDir', './reports'),
+        
+        dict_archive_threshold: getInt('dictArchiveThreshold', 30),
         max_retention: getInt('dictMaxRetention', 30),
         smart_dict: getChecked('optSmartDictGlobal', true),
-        dir_wordlist: getVal('dictDirWordlist', ''),
-        param_wordlist: getVal('dictParamWordlist', ''),
+        dict_dir_wordlist: getVal('dictDirWordlist', ''),
+        dict_param_wordlist: getVal('dictParamWordlist', ''),
         
         verify_ssl: getChecked('optVerifySSLGlobal', false),
         prefer_https: getChecked('optPreferHTTPSGlobal', true),
@@ -2184,12 +2927,12 @@ async function saveSettings() {
                 newPassword.value = '';
                 if (confirmPassword) confirmPassword.value = '';
             }
-            alert(t('common.success') || 'Success');
+            alert(safeT('common.settingsSaved', 'Settings saved successfully'));
         } else {
-            alert(data.error || 'Error');
+            alert(data.error || safeT('common.error', 'Error occurred'));
         }
     } catch (error) {
-        alert('Failed to save settings: ' + error.message);
+        alert(safeT('common.saveFailed', 'Failed to save settings') + ': ' + error.message);
     }
 }
 
@@ -2217,13 +2960,13 @@ async function loadDictStats() {
 }
 
 async function resetDictMemory() {
-    showConfirm(t('reset.dictMemoryConfirm') || 'Reset all dictionary memory? This cannot be undone.', async function() {
+    showConfirm(safeT('common.error', 'Error') || 'Reset all dictionary memory? This cannot be undone.', async function() {
         try {
             var response = await fetch('/api/dict/reset', { method: 'POST' });
             var data = await response.json();
             
             if (data.success) {
-                alert(t('common.success') || 'Success');
+                alert(safeT('common.error', 'Domain not found'));
                 loadDictStats();
             } else {
                 alert(data.error || 'Error');
@@ -2235,13 +2978,13 @@ async function resetDictMemory() {
 }
 
 async function resetScanHistory() {
-    showConfirm(t('reset.scanHistoryConfirm') || 'Reset all scan history? This cannot be undone.', async function() {
+    showConfirm(safeT('common.error', 'Error') || 'Reset all scan history? This cannot be undone.', async function() {
         try {
             var response = await fetch('/api/history/clear', { method: 'POST' });
             var data = await response.json();
             
             if (data.success) {
-                alert(t('common.success') || 'Success');
+                alert(safeT('common.error', 'Domain not found'));
             } else {
                 alert(data.error || 'Error');
             }
@@ -2252,13 +2995,13 @@ async function resetScanHistory() {
 }
 
 async function resetReports() {
-    showConfirm(t('reset.reportsConfirm') || 'Delete all saved reports? This cannot be undone.', async function() {
+    showConfirm(safeT('common.error', 'Error') || 'Delete all saved reports? This cannot be undone.', async function() {
         try {
             var response = await fetch('/api/reports/clear', { method: 'POST' });
             var data = await response.json();
             
             if (data.success) {
-                alert(t('common.success') || 'Success');
+                alert(safeT('common.error', 'Domain not found'));
                 loadReports();
             } else {
                 alert(data.error || 'Error');
@@ -2270,13 +3013,13 @@ async function resetReports() {
 }
 
 async function resetAllSettings() {
-    showConfirm(t('reset.allSettingsConfirm') || 'Reset all settings to default? This cannot be undone.', async function() {
+    showConfirm(safeT('common.error', 'Error') || 'Reset all settings to default? This cannot be undone.', async function() {
         try {
             var response = await fetch('/api/settings/reset', { method: 'POST' });
             var data = await response.json();
             
             if (data.success) {
-                alert(t('common.success') || 'Success');
+                alert(safeT('common.error', 'Domain not found'));
                 loadSettings();
             } else {
                 alert(data.error || 'Error');
@@ -2288,13 +3031,13 @@ async function resetAllSettings() {
 }
 
 async function factoryReset() {
-    showConfirm(t('reset.factoryResetConfirm') || 'Factory reset? This will delete ALL data and settings. This cannot be undone.', async function() {
+    showConfirm(safeT('common.error', 'Error') || 'Factory reset? This will delete ALL data and settings. This cannot be undone.', async function() {
         try {
             var response = await fetch('/api/factory-reset', { method: 'POST' });
             var data = await response.json();
             
             if (data.success) {
-                alert(t('common.success') || 'Success');
+                alert(safeT('common.error', 'Domain not found'));
                 window.location.reload();
             } else {
                 alert(data.error || 'Error');
@@ -2331,9 +3074,12 @@ function closeConfirmModal() {
 
 function escapeHtml(text) {
     if (!text) return '';
-    var div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }
 
 var selectedVuln = null;
@@ -2354,7 +3100,7 @@ function showExploitTab(tabName, event) {
     });
     
     if (event && event.target) {
-        var tab = event.target.closest('.exploit-tab');
+        var tab = event.target.closest('a');
         if (tab) {
             tab.classList.add('active');
         }
@@ -2396,17 +3142,54 @@ function renderVulnList(vulns) {
     var filteredVulns = filter === 'all' ? vulns : vulns.filter(function(v) { return v.severity === filter; });
     
     if (!filteredVulns || filteredVulns.length === 0) {
-        list.innerHTML = '<div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><p>' + (t('exploit.noVulns') || 'No vulnerabilities found') + '</p></div>';
+        list.innerHTML = '<div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><p>' + safeT('results.noResults', 'No results') + '</p></div>';
         return;
     }
     
-    var html = '';
+    var groupedVulns = {};
     filteredVulns.forEach(function(v, i) {
+        var key = (v.target || v.url) + '|' + (v.parameter || '');
+        if (!groupedVulns[key]) {
+            groupedVulns[key] = {
+                target: v.target || v.url,
+                parameter: v.parameter || '',
+                severity: v.severity || 'medium',
+                type: v.type || v.vuln_type || 'RCE',
+                payloads: [],
+                originalIndex: i,
+                count: 0
+            };
+        }
+        if (v.payload || v.match) {
+            groupedVulns[key].payloads.push(v.payload || v.match);
+        }
+        groupedVulns[key].count++;
+        if ((v.severity || 'medium') === 'critical' || (v.severity || 'medium') === 'high') {
+            groupedVulns[key].severity = v.severity;
+        }
+    });
+    
+    var uniqueVulns = Object.values(groupedVulns);
+    
+    var html = '';
+    uniqueVulns.forEach(function(v, i) {
         var severityClass = (v.severity || 'medium').toLowerCase();
-        html += '<div class="vuln-select-item ' + severityClass + '" onclick="selectVuln(' + i + ')" data-index="' + i + '">' +
-            '<div class="vuln-item-url">' + escapeHtml(v.target || v.url) + '</div>' +
-            '<div class="vuln-item-param">Param: ' + escapeHtml(v.parameter || '-') + '</div>' +
+        var vulnType = v.type || 'RCE';
+        var payloadPreview = v.payloads.length > 0 ? v.payloads[0] : '';
+        if (payloadPreview.length > 30) {
+            payloadPreview = payloadPreview.substring(0, 30) + '...';
+        }
+        var countBadge = v.count > 1 ? '<span class="vuln-count-badge">' + v.count + '</span>' : '';
+        
+        html += '<div class="vuln-select-item ' + severityClass + '" onclick="selectVuln(' + v.originalIndex + ')" data-index="' + v.originalIndex + '">' +
+            '<div class="vuln-item-header">' +
             '<span class="vuln-item-severity ' + severityClass + '">' + (v.severity || 'Medium') + '</span>' +
+            '<span class="vuln-item-type">' + escapeHtml(vulnType) + '</span>' +
+            countBadge +
+            '</div>' +
+            '<div class="vuln-item-url">' + escapeHtml(v.target) + '</div>' +
+            '<div class="vuln-item-param">Param: <strong>' + escapeHtml(v.parameter || '-') + '</strong></div>' +
+            '<div class="vuln-item-payload" title="' + escapeHtml(v.payloads.join(', ')) + '">Payload: ' + escapeHtml(payloadPreview) + (v.payloads.length > 1 ? ' (+' + (v.payloads.length - 1) + ' more)' : '') + '</div>' +
             '</div>';
     });
     
@@ -2438,7 +3221,7 @@ function selectVuln(index) {
     
     var cmdOutput = document.getElementById('cmdOutput');
     if (cmdOutput) {
-        cmdOutput.innerHTML = '<div class="cmd-welcome"><span>' + (t('exploit.connected') || 'Connected to target. Ready to execute commands.') + '</span></div>';
+        cmdOutput.innerHTML = '<div class="cmd-welcome"><span>' + safeT('exploit.connected', 'Connected to target. Ready to execute commands.') + '</span></div>';
     }
 }
 
@@ -2478,7 +3261,7 @@ async function executeCommand() {
     
     if (!cmd) return;
     if (!selectedVuln) {
-        alert(t('exploit.selectVulnFirst') || 'Please select a vulnerability first');
+        alert(safeT('common.error', 'Domain not found'));
         return;
     }
     
@@ -2608,7 +3391,7 @@ function copyShellCommand() {
     var cmd = document.getElementById('shellCommandOutput') ? document.getElementById('shellCommandOutput').textContent : '';
     if (cmd) {
         navigator.clipboard.writeText(cmd).then(function() {
-            alert(t('common.copied') || 'Copied to clipboard');
+            alert(safeT('common.error', 'Domain not found'));
         });
     }
 }
@@ -2617,7 +3400,7 @@ function copyListenCommand() {
     var cmd = document.getElementById('listenCommand') ? document.getElementById('listenCommand').textContent : '';
     if (cmd) {
         navigator.clipboard.writeText(cmd).then(function() {
-            alert(t('common.copied') || 'Copied to clipboard');
+            alert(safeT('common.error', 'Domain not found'));
         });
     }
 }
@@ -2702,22 +3485,38 @@ function copyWebshell() {
     var code = document.getElementById('webshellCodeOutput') ? document.getElementById('webshellCodeOutput').textContent : '';
     if (code) {
         navigator.clipboard.writeText(code).then(function() {
-            alert(t('common.copied') || 'Copied to clipboard');
+            alert(safeT('common.error', 'Domain not found'));
         });
     }
 }
 
 async function writeWebshell() {
     if (!selectedVuln) {
-        alert(t('exploit.selectVulnFirst') || 'Please select a vulnerability first');
+        alert(safeT('exploit.selectVuln', 'Please select a vulnerability first'));
         return;
     }
     
     var code = document.getElementById('webshellCodeOutput') ? document.getElementById('webshellCodeOutput').textContent : '';
-    var path = document.getElementById('webshellWritePath') ? document.getElementById('webshellWritePath').value : '';
-    var filename = document.getElementById('webshellFilename') ? document.getElementById('webshellFilename').value : '';
+    var path = document.getElementById('webshellWritePath') ? document.getElementById('webshellWritePath').value : '.';
+    var filename = document.getElementById('webshellFilename') ? document.getElementById('webshellFilename').value : 'shell.php';
+    var password = document.getElementById('webshellPassword') ? document.getElementById('webshellPassword').value : 'pass';
+    var webshellType = 'simple';
     
-    showConfirm(t('webshell.writeConfirm') || 'Write webshell to target? This is a sensitive operation.', async function() {
+    var typeInputs = document.querySelectorAll('input[name="webshellType"]');
+    typeInputs.forEach(function(input) {
+        if (input.checked) {
+            webshellType = input.value;
+        }
+    });
+    
+    if (path === '') {
+        path = '.';
+    }
+    if (filename === '') {
+        filename = 'shell.php';
+    }
+    
+    showConfirm('Write webshell to target? This is a sensitive operation.', async function() {
         try {
             var response = await fetch('/api/exploit/webshell', {
                 method: 'POST',
@@ -2728,17 +3527,22 @@ async function writeWebshell() {
                     parameter: selectedVuln.parameter,
                     code: code,
                     path: path,
-                    filename: filename
+                    filename: filename,
+                    webshell_type: webshellType,
+                    password: password
                 })
             });
             
             var data = await response.json();
             
             if (data.success) {
-                alert(t('common.success') || 'Success');
-                addOperationLog('webshell', 'Write: ' + filename, selectedVuln.target);
+                var msg = 'Webshell written successfully!\n';
+                msg += 'URL: ' + data.webshell_url + '\n';
+                msg += 'Password: ' + data.password;
+                alert(msg);
+                addOperationLog('webshell', 'Write: ' + filename + ' to ' + path, selectedVuln.target);
             } else {
-                alert(data.error || 'Error');
+                alert('Error: ' + (data.error || 'Unknown error'));
             }
         } catch (error) {
             alert('Failed: ' + error.message);
@@ -2773,7 +3577,7 @@ function renderOperationLogs() {
     var filteredLogs = filter === 'all' ? operationLogs : operationLogs.filter(function(l) { return l.type === filter; });
     
     if (!filteredLogs || filteredLogs.length === 0) {
-        list.innerHTML = '<div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><p>' + (t('logs.noLogs') || 'No operation logs') + '</p></div>';
+        list.innerHTML = '<div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><p>' + safeT('results.noResults', 'No results') + '</p></div>';
         return;
     }
     
@@ -2801,18 +3605,20 @@ function exportLogs() {
     var logs = JSON.stringify(operationLogs, null, 2);
     var blob = new Blob([logs], { type: 'application/json' });
     var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
+    var a = document.createElement('');
     a.href = url;
-    a.download = 'operation_logs_' + new Date().toISOString().split('T')[0] + '.json';
+    a.download = 'operation_logs_' + new Date().toISOString().split('\n')[0] + '.json';
     a.click();
     URL.revokeObjectURL(url);
 }
 
 function clearLogs() {
-    showConfirm(t('logs.clearConfirm') || 'Clear all operation logs?', function() {
+    showConfirm(safeT('common.error', 'Error') || 'Clear all operation logs?', function() {
         operationLogs = [];
         localStorage.removeItem('operationLogs');
         renderOperationLogs();
     });
 }
 `
+
+

@@ -113,6 +113,7 @@ var loginHTML = `<!DOCTYPE html>
             width: 20px;
             height: 20px;
             color: rgba(248, 250, 252, 0.4);
+            pointer-events: none;
         }
         
         .input-icon-wrapper input {
@@ -125,6 +126,40 @@ var loginHTML = `<!DOCTYPE html>
             font-size: 15px;
             font-family: 'Fira Sans', sans-serif;
             transition: all 0.3s ease;
+        }
+        
+        .input-icon-wrapper input[type="password"],
+        .input-icon-wrapper input[type="text"] {
+            padding-right: 48px;
+        }
+        
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+            color: rgba(248, 250, 252, 0.5);
+            transition: color 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+        
+        .password-toggle:hover {
+            color: #22C55E;
+        }
+        
+        .password-toggle svg {
+            position: static;
+            transform: none;
+            width: 18px;
+            height: 18px;
+            pointer-events: auto;
         }
         
         .input-icon-wrapper input:focus {
@@ -316,6 +351,16 @@ var loginHTML = `<!DOCTYPE html>
                     <input type="password" id="password" name="password" 
                            data-i18n-placeholder="login.passwordPlaceholder" 
                            placeholder="请输入密码" required autocomplete="current-password">
+                    <button type="button" class="password-toggle" onclick="togglePassword()" title="显示/隐藏密码">
+                        <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        <svg id="eyeOffIcon" style="display:none" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                            <line x1="1" y1="1" x2="23" y2="23"/>
+                        </svg>
+                    </button>
                 </div>
             </div>
             
@@ -340,50 +385,119 @@ var loginHTML = `<!DOCTYPE html>
     <script src="/static/js/i18n.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('langSelector').value = currentLang;
+            if (typeof currentLang !== 'undefined') {
+                document.getElementById('langSelector').value = currentLang;
+            }
         });
         
         function changeLanguage(lang) {
-            setLanguage(lang);
+            if (typeof setLanguage === 'function') {
+                setLanguage(lang);
+            }
+        }
+        
+        function togglePassword() {
+            var passwordInput = document.getElementById('password');
+            var eyeIcon = document.getElementById('eyeIcon');
+            var eyeOffIcon = document.getElementById('eyeOffIcon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeIcon.style.display = 'none';
+                eyeOffIcon.style.display = 'block';
+            } else {
+                passwordInput.type = 'password';
+                eyeIcon.style.display = 'block';
+                eyeOffIcon.style.display = 'none';
+            }
+        }
+        
+        function generateNonce() {
+            var array = new Uint8Array(16);
+            crypto.getRandomValues(array);
+            return Array.from(array, function(b) {
+                return b.toString(16).padStart(2, '0');
+            }).join('');
+        }
+        
+        function simpleEncrypt(data, key) {
+            var result = '';
+            for (var i = 0; i < data.length; i++) {
+                var charCode = data.charCodeAt(i);
+                var keyChar = key.charCodeAt(i % key.length);
+                result += String.fromCharCode(charCode ^ keyChar);
+            }
+            return btoa(result);
+        }
+        
+        function getText(key, defaultText) {
+            if (typeof t === 'function') {
+                return t(key) || defaultText;
+            }
+            return defaultText;
         }
         
         function handleLogin(event) {
             event.preventDefault();
             
-            var username = document.getElementById('username').value;
+            var username = document.getElementById('username').value.trim();
             var password = document.getElementById('password').value;
             var loginBtn = document.getElementById('loginBtn');
             var loginBtnText = document.getElementById('loginBtnText');
             var errorMessage = document.getElementById('errorMessage');
             
+            if (!username || !password) {
+                showError(getText('login.emptyFields', '请输入用户名和密码'));
+                return false;
+            }
+            
             loginBtn.disabled = true;
-            loginBtnText.innerHTML = '<span class="loading-spinner"></span>' + t('login.signing');
+            loginBtnText.innerHTML = '<span class="loading-spinner"></span>' + getText('login.signing', '登录中...');
             errorMessage.classList.remove('show');
+            
+            var timestamp = Date.now().toString();
+            var nonce = generateNonce();
+            var clientKey = nonce + timestamp;
+            
+            var encryptedPassword = simpleEncrypt(password, clientKey);
+            
+            var loginData = {
+                username: username,
+                password: encryptedPassword,
+                nonce: nonce,
+                timestamp: timestamp
+            };
             
             fetch('/api/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    username: username,
-                    password: password
-                })
+                body: JSON.stringify(loginData)
             })
-            .then(function(response) { return response.json(); })
+            .then(function(response) { 
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json(); 
+            })
             .then(function(data) {
                 if (data.success) {
-                    window.location.href = '/dashboard';
+                    loginBtnText.textContent = getText('login.success', '登录成功');
+                    setTimeout(function() {
+                        window.location.href = '/dashboard';
+                    }, 100);
                 } else {
-                    showError(data.error || t('login.error'));
+                    showError(data.error || getText('login.error', '用户名或密码错误'));
                     loginBtn.disabled = false;
-                    loginBtnText.textContent = t('login.btn');
+                    loginBtnText.textContent = getText('login.btn', '登 录');
                 }
             })
             .catch(function(error) {
-                showError(t('login.errorConnection'));
+                console.error('Login error:', error);
+                showError(getText('login.errorConnection', '连接失败，请稍后重试'));
                 loginBtn.disabled = false;
-                loginBtnText.textContent = t('login.btn');
+                loginBtnText.textContent = getText('login.btn', '登 录');
             });
             
             return false;

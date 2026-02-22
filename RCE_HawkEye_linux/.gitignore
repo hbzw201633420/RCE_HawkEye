@@ -1,0 +1,31 @@
+# Binaries
+rce-hawkeye
+
+# Reports
+reports/*.json
+reports/*.html
+reports/*.md
+reports/*/
+!reports/.gitkeep
+
+# History
+data/history/*.json
+!data/history/.gitkeep
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo

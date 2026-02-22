@@ -34,8 +34,12 @@ var translations = {
             forgot: '忘记密码?',
             btn: '登 录',
             signing: '登录中...',
+            success: '登录成功',
             error: '用户名或密码错误',
-            errorConnection: '连接错误，请重试'
+            errorConnection: '连接错误，请重试',
+            emptyFields: '请输入用户名和密码',
+            showPassword: '显示密码',
+            hidePassword: '隐藏密码'
         },
         
         search: {
@@ -59,11 +63,14 @@ var translations = {
             dirscan: '目录扫描',
             paramfuzz: '参数模糊',
             crawl: '爬虫配置',
-            output: '输出配置'
+            output: '输出配置',
+            targetSettings: '目标设置',
+            scanSettings: '扫描设置',
+            scanOptions: '扫描选项'
         },
         
         target: {
-            urlFile: 'URL文件 (每行一个)',
+            urlFile: 'URL列表 (每行一个)',
             urlFilePlaceholder: '每行一个URL',
             rawTraffic: '流量包文件',
             rawTrafficPlaceholder: '流量包文件路径',
@@ -71,7 +78,8 @@ var translations = {
             configFilePlaceholder: '配置文件路径',
             allowDomains: '允许域名',
             blockDomains: '禁止域名',
-            restrictRoot: '限制在根域名内'
+            restrictRoot: '限制在根域名内',
+            fileUpload: '或上传文件'
         },
         
         http: {
@@ -137,7 +145,8 @@ var translations = {
         output: {
             format: '输出格式',
             dir: '输出目录',
-            file: '输出文件'
+            file: '输出文件',
+            settings: '输出设置'
         },
         
         scan: {
@@ -151,6 +160,7 @@ var translations = {
             scanOptions: '扫描选项',
             concurrent: '并发数',
             timeout: '超时时间 (秒)',
+            retries: '重试次数',
             smartDict: '智能字典',
             advanced: '高级选项',
             startScan: '开始扫描',
@@ -161,11 +171,13 @@ var translations = {
             analyzing: '分析结果中...',
             completed: '扫描完成',
             stopped: '扫描已停止',
+            error: '扫描出错',
             foundVulns: '发现 {count} 个漏洞',
             currentUrl: '当前URL',
             currentParam: '当前参数',
             progress: '扫描进度',
-            vulnsFound: '已发现漏洞'
+            vulnsFound: '已发现漏洞',
+            terminal: '扫描终端'
         },
         
         level: {
@@ -191,13 +203,10 @@ var translations = {
             verifySSL: '验证SSL证书',
             noHTTPS: '禁用HTTPS',
             verbose: '详细输出',
+            smartDict: '智能字典',
             includeResponse: '包含响应',
-            recursive: '递归扫描',
-            followRedirects: '跟随重定向',
-            extractJS: '从JS提取参数',
-            extractHTML: '从HTML提取参数',
-            restrictRoot: '限制根域名',
-            smartDict: '智能字典'
+            followRedirect: '跟随重定向',
+            autoDetect: '自动检测技术栈'
         },
         
         results: {
@@ -249,7 +258,8 @@ var translations = {
             custom: '自定义',
             gcPause: 'GC暂停',
             trendView: '趋势图',
-            gaugeView: '百分比图'
+            gaugeView: '百分比图',
+            confirmClearAlerts: '确定清除所有告警？'
         },
         
         alerts: {
@@ -274,7 +284,14 @@ var translations = {
             csv: 'CSV表格',
             includePerf: '包含性能数据',
             includeVulns: '包含漏洞详情',
-            includeRecommendations: '包含修复建议'
+            includeRecommendations: '包含修复建议',
+            selectAll: '全选',
+            deleteSelected: '删除选中',
+            noReports: '暂无报告',
+            confirmDelete: '确定删除选中的报告？',
+            deleteSuccess: '报告删除成功',
+            deleteFailed: '删除失败',
+            selectFirst: '请先选择报告'
         },
         
         dashboard: {
@@ -377,11 +394,14 @@ var translations = {
             selected: '已选择',
             exportSelected: '导出选中',
             deleteSelected: '删除选中',
+            selectAll: '全选',
             selectFirst: '请先选择项目',
             confirmDelete: '确定删除选中的项目？',
             domainDetail: '域名详情',
             domainInfo: '域名信息',
-            exportReport: '导出报告'
+            exportReport: '导出报告',
+            deleteSuccess: '删除成功',
+            deleteFailed: '删除失败'
         },
         
         notification: {
@@ -506,7 +526,17 @@ var translations = {
             enabled: '启用',
             disabled: '禁用',
             copy: '复制',
-            copied: '已复制到剪贴板'
+            copied: '已复制到剪贴板',
+            resetDefaults: '恢复默认',
+            saveSettings: '保存设置',
+            settingsReset: '设置已恢复为默认值',
+            settingsSaved: '设置已保存',
+            saveFailed: '保存失败',
+            selectAll: '全选',
+            deselectAll: '取消全选',
+            deleteSelected: '删除选中',
+            delete: '删除',
+            deleted: '删除成功'
         }
     },
     
@@ -542,8 +572,12 @@ var translations = {
             forgot: 'Forgot password?',
             btn: 'Sign In',
             signing: 'Signing in...',
+            success: 'Login successful',
             error: 'Invalid username or password',
-            errorConnection: 'Connection error. Please try again'
+            errorConnection: 'Connection error. Please try again',
+            emptyFields: 'Please enter username and password',
+            showPassword: 'Show password',
+            hidePassword: 'Hide password'
         },
         
         search: {
@@ -567,11 +601,14 @@ var translations = {
             dirscan: 'Dir Scan',
             paramfuzz: 'Param Fuzz',
             crawl: 'Crawler',
-            output: 'Output'
+            output: 'Output',
+            targetSettings: 'Target Settings',
+            scanSettings: 'Scan Settings',
+            scanOptions: 'Scan Options'
         },
         
         target: {
-            urlFile: 'URL File (one per line)',
+            urlFile: 'URL List (one per line)',
             urlFilePlaceholder: 'One URL per line',
             rawTraffic: 'Traffic File',
             rawTrafficPlaceholder: 'Traffic file path',
@@ -579,7 +616,8 @@ var translations = {
             configFilePlaceholder: 'Config file path',
             allowDomains: 'Allow Domains',
             blockDomains: 'Block Domains',
-            restrictRoot: 'Restrict to Root Domain'
+            restrictRoot: 'Restrict to Root Domain',
+            fileUpload: 'Or Upload File'
         },
         
         http: {
@@ -645,7 +683,8 @@ var translations = {
         output: {
             format: 'Output Format',
             dir: 'Output Directory',
-            file: 'Output File'
+            file: 'Output File',
+            settings: 'Output Settings'
         },
         
         scan: {
@@ -659,6 +698,7 @@ var translations = {
             scanOptions: 'Scan Options',
             concurrent: 'Concurrent',
             timeout: 'Timeout (s)',
+            retries: 'Retries',
             smartDict: 'Smart Dictionary',
             advanced: 'Advanced Options',
             startScan: 'Start Scan',
@@ -669,11 +709,13 @@ var translations = {
             analyzing: 'Analyzing results...',
             completed: 'Scan completed',
             stopped: 'Scan stopped by user',
+            error: 'Scan error',
             foundVulns: 'Found {count} vulnerabilities',
             currentUrl: 'Current URL',
             currentParam: 'Current Param',
             progress: 'Progress',
-            vulnsFound: 'Vulns Found'
+            vulnsFound: 'Vulns Found',
+            terminal: 'Scan Terminal'
         },
         
         level: {
@@ -757,7 +799,8 @@ var translations = {
             custom: 'Custom',
             gcPause: 'GC Pause',
             trendView: 'Trend',
-            gaugeView: 'Gauge'
+            gaugeView: 'Gauge',
+            confirmClearAlerts: 'Clear all alerts?'
         },
         
         alerts: {
@@ -782,7 +825,14 @@ var translations = {
             csv: 'CSV Table',
             includePerf: 'Include Performance',
             includeVulns: 'Include Vulnerabilities',
-            includeRecommendations: 'Include Recommendations'
+            includeRecommendations: 'Include Recommendations',
+            selectAll: 'Select All',
+            deleteSelected: 'Delete Selected',
+            noReports: 'No reports found',
+            confirmDelete: 'Delete selected reports?',
+            deleteSuccess: 'Reports deleted successfully',
+            deleteFailed: 'Failed to delete',
+            selectFirst: 'Please select reports first'
         },
         
         dashboard: {
@@ -885,11 +935,14 @@ var translations = {
             selected: 'selected',
             exportSelected: 'Export Selected',
             deleteSelected: 'Delete Selected',
+            selectAll: 'Select All',
             selectFirst: 'Please select items first',
             confirmDelete: 'Delete selected items?',
             domainDetail: 'Domain Details',
             domainInfo: 'Domain Information',
-            exportReport: 'Export Report'
+            exportReport: 'Export Report',
+            deleteSuccess: 'Deleted successfully',
+            deleteFailed: 'Delete failed'
         },
         
         notification: {
@@ -1014,7 +1067,17 @@ var translations = {
             enabled: 'Enabled',
             disabled: 'Disabled',
             copy: 'Copy',
-            copied: 'Copied to clipboard'
+            copied: 'Copied to clipboard',
+            resetDefaults: 'Reset to Defaults',
+            saveSettings: 'Save Settings',
+            settingsReset: 'Settings reset to defaults',
+            settingsSaved: 'Settings saved',
+            saveFailed: 'Failed to save settings',
+            selectAll: 'Select All',
+            deselectAll: 'Deselect All',
+            deleteSelected: 'Delete Selected',
+            delete: 'Delete',
+            deleted: 'Deleted successfully'
         }
     }
 };

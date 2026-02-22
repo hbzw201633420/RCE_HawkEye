@@ -3,6 +3,7 @@ package scanner
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -120,7 +121,7 @@ type Scanner struct {
 	trafficCallback     TrafficCallback
 	stopFlag            int32
 	baselines           map[string]map[string]interface{}
-	mu                  sync.Mutex
+	mu                  sync.RWMutex
 	requestTimeout      time.Duration
 	progressTimeout     time.Duration
 	lastProgressTime    time.Time
@@ -306,17 +307,33 @@ func (s *Scanner) detectTechFromURL(targetURL string) types.TechType {
 	urlLower := strings.ToLower(targetURL)
 
 	if strings.Contains(urlLower, ".php") || strings.Contains(urlLower, "wp-") ||
-		strings.Contains(urlLower, "laravel") || strings.Contains(urlLower, "symfony") {
+		strings.Contains(urlLower, "laravel") || strings.Contains(urlLower, "symfony") ||
+		strings.Contains(urlLower, "thinkphp") || strings.Contains(urlLower, "codeigniter") ||
+		strings.Contains(urlLower, "yii") || strings.Contains(urlLower, "cakephp") ||
+		strings.Contains(urlLower, "slim") || strings.Contains(urlLower, "phalcon") ||
+		strings.Contains(urlLower, "zend") || strings.Contains(urlLower, "drupal") ||
+		strings.Contains(urlLower, "joomla") || strings.Contains(urlLower, "magento") ||
+		strings.Contains(urlLower, "mediawiki") || strings.Contains(urlLower, "phpmyadmin") {
 		return types.TechTypePHP
 	}
 
 	if strings.Contains(urlLower, ".jsp") || strings.Contains(urlLower, ".do") ||
-		strings.Contains(urlLower, ".action") || strings.Contains(urlLower, "web-inf") {
+		strings.Contains(urlLower, ".action") || strings.Contains(urlLower, "web-inf") ||
+		strings.Contains(urlLower, "struts") || strings.Contains(urlLower, "spring") ||
+		strings.Contains(urlLower, "tomcat") || strings.Contains(urlLower, "weblogic") ||
+		strings.Contains(urlLower, "websphere") || strings.Contains(urlLower, "jboss") ||
+		strings.Contains(urlLower, "jetty") || strings.Contains(urlLower, "resin") ||
+		strings.Contains(urlLower, "glassfish") || strings.Contains(urlLower, ".jspx") ||
+		strings.Contains(urlLower, ".jspa") || strings.Contains(urlLower, ".jsw") ||
+		strings.Contains(urlLower, ".jws") {
 		return types.TechTypeJSPJava
 	}
 
 	if strings.Contains(urlLower, ".aspx") || strings.Contains(urlLower, ".ashx") ||
-		strings.Contains(urlLower, ".asmx") || strings.Contains(urlLower, "web.config") {
+		strings.Contains(urlLower, ".asmx") || strings.Contains(urlLower, "web.config") ||
+		strings.Contains(urlLower, ".axd") || strings.Contains(urlLower, ".svc") ||
+		strings.Contains(urlLower, "asp.net") || strings.Contains(urlLower, "iis") ||
+		strings.Contains(urlLower, "mvc") {
 		return types.TechTypeASPXDotNet
 	}
 
@@ -325,22 +342,125 @@ func (s *Scanner) detectTechFromURL(targetURL string) types.TechType {
 	}
 
 	if strings.Contains(urlLower, ".py") || strings.Contains(urlLower, "django") ||
-		strings.Contains(urlLower, "flask") || strings.Contains(urlLower, "fastapi") {
+		strings.Contains(urlLower, "flask") || strings.Contains(urlLower, "fastapi") ||
+		strings.Contains(urlLower, "tornado") || strings.Contains(urlLower, "bottle") ||
+		strings.Contains(urlLower, "pyramid") || strings.Contains(urlLower, "cherrypy") ||
+		strings.Contains(urlLower, "aiohttp") || strings.Contains(urlLower, "sanic") ||
+		strings.Contains(urlLower, "starlette") || strings.Contains(urlLower, "gunicorn") ||
+		strings.Contains(urlLower, "uwsgi") {
 		return types.TechTypePython
 	}
 
 	if strings.Contains(urlLower, "expressjs") || strings.Contains(urlLower, "nodejs") ||
-		strings.Contains(urlLower, "npm") || strings.Contains(urlLower, "package.json") {
+		strings.Contains(urlLower, "npm") || strings.Contains(urlLower, "package.json") ||
+		strings.Contains(urlLower, "koa") || strings.Contains(urlLower, "hapi") ||
+		strings.Contains(urlLower, "fastify") || strings.Contains(urlLower, "nestjs") ||
+		strings.Contains(urlLower, "sails") || strings.Contains(urlLower, "meteor") ||
+		strings.Contains(urlLower, "loopback") || strings.Contains(urlLower, ".node") {
 		return types.TechTypeNodeJS
 	}
 
 	if strings.Contains(urlLower, ".rb") || strings.Contains(urlLower, "rails") ||
-		strings.Contains(urlLower, "ruby") {
+		strings.Contains(urlLower, "ruby") || strings.Contains(urlLower, "sinatra") ||
+		strings.Contains(urlLower, "puma") || strings.Contains(urlLower, "passenger") ||
+		strings.Contains(urlLower, "rack") {
 		return types.TechTypeRuby
 	}
 
-	if strings.Contains(urlLower, ".go") || strings.Contains(urlLower, "golang") {
+	if strings.Contains(urlLower, ".go") || strings.Contains(urlLower, "golang") ||
+		strings.Contains(urlLower, "gin") || strings.Contains(urlLower, "echo") ||
+		strings.Contains(urlLower, "fiber") || strings.Contains(urlLower, "beego") ||
+		strings.Contains(urlLower, "revel") || strings.Contains(urlLower, "martini") {
 		return types.TechTypeGo
+	}
+
+	if strings.Contains(urlLower, ".pl") || strings.Contains(urlLower, ".cgi") ||
+		strings.Contains(urlLower, "perl") || strings.Contains(urlLower, "mojolicious") ||
+		strings.Contains(urlLower, "dancer") || strings.Contains(urlLower, "catalyst") {
+		return types.TechTypePerl
+	}
+
+	if strings.Contains(urlLower, ".lua") || strings.Contains(urlLower, "nginx") ||
+		strings.Contains(urlLower, "openresty") || strings.Contains(urlLower, "kong") {
+		return types.TechTypeLua
+	}
+
+	if strings.Contains(urlLower, ".cfm") || strings.Contains(urlLower, ".cfc") ||
+		strings.Contains(urlLower, "coldfusion") || strings.Contains(urlLower, "lucee") ||
+		strings.Contains(urlLower, "railo") || strings.Contains(urlLower, "bluedragon") {
+		return types.TechTypeColdFusion
+	}
+
+	return types.TechTypeUnknown
+}
+
+func (s *Scanner) detectTechFromResponse(response map[string]interface{}) types.TechType {
+	headers, _ := response["headers"].(map[string]string)
+	content, _ := response["content"].(string)
+	contentLower := strings.ToLower(content)
+
+	if headers != nil {
+		xPoweredBy := strings.ToLower(headers["X-Powered-By"])
+		server := strings.ToLower(headers["Server"])
+		setCookie := strings.ToLower(headers["Set-Cookie"])
+		
+		if strings.Contains(xPoweredBy, "php") || strings.Contains(setCookie, "phpsessid") ||
+			strings.Contains(server, "php") {
+			return types.TechTypePHP
+		}
+		
+		if strings.Contains(xPoweredBy, "jsp") || strings.Contains(xPoweredBy, "servlet") ||
+			strings.Contains(xPoweredBy, "tomcat") || strings.Contains(xPoweredBy, "weblogic") ||
+			strings.Contains(setCookie, "jsessionid") {
+			return types.TechTypeJSPJava
+		}
+		
+		if strings.Contains(xPoweredBy, "asp.net") || strings.Contains(server, "iis") ||
+			strings.Contains(setCookie, "asp.net") {
+			return types.TechTypeASPXDotNet
+		}
+		
+		if strings.Contains(xPoweredBy, "python") || strings.Contains(xPoweredBy, "django") ||
+			strings.Contains(xPoweredBy, "flask") || strings.Contains(xPoweredBy, "wsgi") {
+			return types.TechTypePython
+		}
+		
+		if strings.Contains(xPoweredBy, "node") || strings.Contains(xPoweredBy, "express") ||
+			strings.Contains(server, "node") {
+			return types.TechTypeNodeJS
+		}
+		
+		if strings.Contains(xPoweredBy, "ruby") || strings.Contains(xPoweredBy, "rails") ||
+			strings.Contains(xPoweredBy, "passenger") || strings.Contains(xPoweredBy, "puma") {
+			return types.TechTypeRuby
+		}
+	}
+
+	if strings.Contains(contentLower, "<?php") || strings.Contains(contentLower, "<?=") ||
+		strings.Contains(contentLower, "phpinfo()") || strings.Contains(contentLower, "laravel") ||
+		strings.Contains(contentLower, "symfony") || strings.Contains(contentLower, "thinkphp") {
+		return types.TechTypePHP
+	}
+
+	if strings.Contains(contentLower, "<%@ page") || strings.Contains(contentLower, "<jsp:") ||
+		strings.Contains(contentLower, "javax.servlet") || strings.Contains(contentLower, "web-inf") {
+		return types.TechTypeJSPJava
+	}
+
+	if strings.Contains(contentLower, "<%@ import") || strings.Contains(contentLower, "system.web") ||
+		strings.Contains(contentLower, "asp.net") || strings.Contains(contentLower, "__viewstate") {
+		return types.TechTypeASPXDotNet
+	}
+
+	if strings.Contains(contentLower, "traceback (most recent call last)") ||
+		strings.Contains(contentLower, "django") || strings.Contains(contentLower, "flask") ||
+		strings.Contains(contentLower, "jinja2") || strings.Contains(contentLower, "werkzeug") {
+		return types.TechTypePython
+	}
+
+	if strings.Contains(contentLower, "node.js") || strings.Contains(contentLower, "express") ||
+		strings.Contains(contentLower, "npm") || strings.Contains(contentLower, "package.json") {
+		return types.TechTypeNodeJS
 	}
 
 	return types.TechTypeUnknown
@@ -349,6 +469,7 @@ func (s *Scanner) detectTechFromURL(targetURL string) types.TechType {
 type scanTask struct {
 	param   string
 	payload types.Payload
+	method  string
 }
 
 type scanResult struct {
@@ -393,6 +514,7 @@ func (s *Scanner) fetchURL(ctx context.Context, target *types.ScanTarget, params
 	var reqURL string
 	var reqBody io.Reader
 	var reqBodyLen int
+	var bodyStr string
 	var method = target.Method
 
 	if method == "" {
@@ -421,14 +543,24 @@ func (s *Scanner) fetchURL(ctx context.Context, target *types.ScanTarget, params
 			}
 		}
 		
-		bodyStr := formData.Encode()
+		if len(formData) == 0 {
+			for k, v := range params {
+				formData.Set(k, v)
+			}
+		}
+		
+		bodyStr = formData.Encode()
 		reqBody = strings.NewReader(bodyStr)
 		reqBodyLen = len(bodyStr)
+		
+		if strings.Contains(bodyStr, "code=") && len(bodyStr) < 200 {
+			fmt.Printf("[DEBUG] POST Body: %s\n", bodyStr)
+		}
 	} else {
 		reqURL = utils.BuildURL(target.URL, params)
 	}
 
-	cacheKey := method + ":" + reqURL
+	cacheKey := method + ":" + reqURL + ":" + bodyStr
 	if cached, ok := s.cache.Get(cacheKey); ok {
 		return cached, nil
 	}
@@ -578,15 +710,14 @@ func (s *Scanner) Scan(ctx context.Context, targets []*types.ScanTarget) []*type
 	atomic.StoreInt32(&s.stopFlag, 0)
 	results := make([]*types.ScanResult, 0)
 
+	totalTargets := len(targets)
 	for i, target := range targets {
 		if s.isStopped() {
 			break
 		}
 
-		s.reportProgress(i+1, len(targets), target.URL, nil)
-
 		startTime := time.Now()
-		vulns := s.scanTarget(ctx, target)
+		vulns := s.scanTargetWithProgress(ctx, target, i, totalTargets)
 		scanTime := time.Since(startTime).Seconds()
 
 		result := &types.ScanResult{
@@ -601,7 +732,7 @@ func (s *Scanner) Scan(ctx context.Context, targets []*types.ScanTarget) []*type
 	return results
 }
 
-func (s *Scanner) scanTarget(ctx context.Context, target *types.ScanTarget) []types.Vulnerability {
+func (s *Scanner) scanTargetWithProgress(ctx context.Context, target *types.ScanTarget, targetIndex, totalTargets int) []types.Vulnerability {
 	var vulnerabilities []types.Vulnerability
 	var vulnMu sync.Mutex
 
@@ -644,10 +775,118 @@ func (s *Scanner) scanTarget(ctx context.Context, target *types.ScanTarget) []ty
 	}
 
 	if len(paramsToTest) == 0 {
-		return vulnerabilities
+		commonParams := []struct {
+			name  string
+			value string
+		}{
+			{"code", "test"},
+			{"ip", "127.0.0.1"},
+			{"cmd", "test"},
+			{"command", "test"},
+			{"exec", "test"},
+			{"query", "test"},
+			{"file", "test.txt"},
+			{"path", "/etc/passwd"},
+			{"id", "1"},
+			{"page", "1"},
+			{"url", "http://example.com"},
+			{"host", "localhost"},
+			{"domain", "example.com"},
+			{"input", "test"},
+			{"data", "test"},
+			{"param", "test"},
+			{"arg", "test"},
+			{"val", "test"},
+			{"name", "test"},
+			{"user", "admin"},
+			{"target", "localhost"},
+			{"php", "test"},
+			{"eval", "test"},
+			{"func", "test"},
+			{"function", "test"},
+			{"call", "test"},
+			{"run", "test"},
+			{"action", "test"},
+			{"do", "test"},
+			{"task", "test"},
+			{"job", "test"},
+			{"process", "test"},
+			{"execute", "test"},
+		}
+		
+		for _, p := range commonParams {
+			paramsToTest = append(paramsToTest, p)
+		}
+		
+		if s.progressCallback != nil {
+			s.progressCallback(0, 0, target.URL, map[string]interface{}{
+				"phase": "auto_params",
+				"params": len(paramsToTest),
+				"message": "No parameters found, using common parameter names",
+			})
+		}
 	}
 
 	detectedTech := s.detectTechFromURL(target.URL)
+	
+	baselineCtx, baselineCancel := context.WithTimeout(ctx, s.requestTimeout)
+	defer baselineCancel()
+	
+	var baselineResp map[string]interface{}
+	var baselineRespPOST map[string]interface{}
+	
+	baselineResp, _ = s.fetchURL(baselineCtx, target, target.Parameters)
+	
+	postTarget := &types.ScanTarget{
+		URL:        target.URL,
+		Method:     "POST",
+		Headers:    target.Headers,
+		Data:       make(map[string]string),
+		Parameters: make(map[string]string),
+	}
+	for k, v := range target.Parameters {
+		postTarget.Data[k] = v
+		postTarget.Parameters[k] = v
+	}
+	{
+		postCtx, postCancel := context.WithTimeout(ctx, s.requestTimeout)
+		baselineRespPOST, _ = s.fetchURL(postCtx, postTarget, postTarget.Data)
+		postCancel()
+	}
+	
+	baselinePostContent, _ := baselineRespPOST["content"].(string)
+	if len(baselinePostContent) > 0 && len(baselinePostContent) < 2000 {
+		fmt.Printf("[DEBUG] Baseline POST Content Preview: %s\n", baselinePostContent[:min(500, len(baselinePostContent))])
+	}
+	
+	s.mu.Lock()
+	s.baselines[target.URL] = baselineResp
+	s.baselines[target.URL+"::POST"] = baselineRespPOST
+	s.mu.Unlock()
+
+	baselineContent, _ := baselineResp["content"].(string)
+	baselineURL, _ := baselineResp["url"].(string)
+	baselineContentPOST, _ := baselineRespPOST["content"].(string)
+	
+	fmt.Printf("[DEBUG] Baseline GET: URL=%s, ContentLen=%d, StatusCode=%v\n", 
+		baselineURL, len(baselineContent), baselineResp["status_code"])
+	fmt.Printf("[DEBUG] Baseline POST: URL=%s, ContentLen=%d, StatusCode=%v\n", 
+		target.URL, len(baselineContentPOST), baselineRespPOST["status_code"])
+	
+	responseTech := s.detectTechFromResponse(baselineResp)
+	if responseTech != types.TechTypeUnknown {
+		detectedTech = responseTech
+	}
+	
+	if s.progressCallback != nil {
+		s.progressCallback(0, 0, target.URL, map[string]interface{}{
+			"phase": "tech_detected",
+			"url_tech": s.detectTechFromURL(target.URL),
+			"response_tech": responseTech,
+			"final_tech": string(detectedTech),
+		})
+	}
+	
 	payloads := s.payloadGenerator.GetPayloadsByModeAndTech(s.scanMode, detectedTech)
 	
 	if s.progressCallback != nil {
@@ -697,21 +936,12 @@ func (s *Scanner) scanTarget(ctx context.Context, target *types.ScanTarget) []ty
 			"phase": "start",
 			"params": len(paramsToTest),
 			"payloads": len(payloads),
+			"tech": string(detectedTech),
 		})
 	}
 
-	totalPayloads := len(payloads) * len(paramsToTest)
+	totalPayloads := len(payloads) * len(paramsToTest) * 2
 	var testedPayloads int32
-
-	baselineCtx, baselineCancel := context.WithTimeout(ctx, s.requestTimeout)
-	defer baselineCancel()
-	baselineResp, _ := s.fetchURL(baselineCtx, target, target.Parameters)
-	s.mu.Lock()
-	s.baselines[target.URL] = baselineResp
-	s.mu.Unlock()
-
-	baselineContent, _ := baselineResp["content"].(string)
-	baselineURL, _ := baselineResp["url"].(string)
 	
 	s.updateProgress()
 	
@@ -725,15 +955,21 @@ func (s *Scanner) scanTarget(ctx context.Context, target *types.ScanTarget) []ty
 	}
 
 	if len(payloads) == 0 {
+		fmt.Printf("[DEBUG] No payloads to test for target: %s\n", target.URL)
 		return vulnerabilities
 	}
 
-	tasks := make([]scanTask, 0, totalPayloads)
+	fmt.Printf("[DEBUG] Testing %d payloads on %d params for target: %s\n", len(payloads), len(paramsToTest), target.URL)
+
+	tasks := make([]scanTask, 0, totalPayloads*2)
 	for _, param := range paramsToTest {
 		for _, p := range payloads {
-			tasks = append(tasks, scanTask{param: param.name, payload: p})
+			tasks = append(tasks, scanTask{param: param.name, payload: p, method: "GET"})
+			tasks = append(tasks, scanTask{param: param.name, payload: p, method: "POST"})
 		}
 	}
+
+	fmt.Printf("[DEBUG] Created %d scan tasks\n", len(tasks))
 
 	if s.progressCallback != nil && len(tasks) > 0 {
 		s.progressCallback(0, len(tasks), target.URL, map[string]interface{}{
@@ -747,7 +983,10 @@ func (s *Scanner) scanTarget(ctx context.Context, target *types.ScanTarget) []ty
 	taskChan := make(chan scanTask, s.maxConcurrent*2)
 	resultChan := make(chan scanResult, s.maxConcurrent*2)
 
+	fmt.Printf("[DEBUG] Starting %d worker goroutines\n", s.maxConcurrent)
+
 	var wg sync.WaitGroup
+	var completedTasks int32
 
 	for i := 0; i < s.maxConcurrent; i++ {
 		wg.Add(1)
@@ -766,46 +1005,98 @@ func (s *Scanner) scanTarget(ctx context.Context, target *types.ScanTarget) []ty
 
 				testParams := make(map[string]string)
 				
-				if target.Method == "POST" {
-					if target.Data != nil {
-						for k, v := range target.Data {
-							testParams[k] = v
-						}
-					}
-				}
-				
 				for k, v := range target.Parameters {
 					testParams[k] = v
 				}
 				testParams[task.param] = task.payload.Content
+				
+				if task.payload.SecondaryParam != "" && task.payload.SecondaryValue != "" {
+					testParams[task.payload.SecondaryParam] = task.payload.SecondaryValue
+				}
+				
+				testTarget := &types.ScanTarget{
+					URL:        target.URL,
+					Method:     task.method,
+					Headers:    target.Headers,
+					Data:       testParams,
+					Parameters: testParams,
+				}
 
 				reqCtx, reqCancel := context.WithTimeout(ctx, s.requestTimeout)
-				resp, _ := s.fetchURL(reqCtx, target, testParams)
+				resp, err := s.fetchURL(reqCtx, testTarget, testParams)
 				reqCancel()
 				
 				s.updateProgress()
 				
+				if err != nil {
+					fmt.Printf("[DEBUG] Request error: %v\n", err)
+					resultChan <- scanResult{}
+					continue
+				}
+				
 				respContent, _ := resp["content"].(string)
 				respURL, _ := resp["url"].(string)
+				respStatus, _ := resp["status_code"].(int)
 				
-				if s.progressCallback != nil && len(respContent) > 0 {
-					s.progressCallback(0, 0, target.URL, map[string]interface{}{
+				if task.method == "POST" && task.param == "code" && len(respContent) > 0 {
+					fmt.Printf("[DEBUG] POST code param: Payload=%s, RespLen=%d, RespStatus=%d\n", 
+						task.payload.Content[:min(30, len(task.payload.Content))], len(respContent), respStatus)
+					if task.payload.ExpectedOutput != "" && strings.Contains(respContent, task.payload.ExpectedOutput) {
+						fmt.Printf("[DEBUG] FOUND ExpectedOutput=%s in response!\n", task.payload.ExpectedOutput)
+					}
+					if len(respContent) != 1423 {
+						fmt.Printf("[DEBUG] Response length changed! Baseline=1423, Current=%d\n", len(respContent))
+					}
+				}
+				
+				if s.progressCallback != nil {
+					completed := int(atomic.AddInt32(&completedTasks, 1))
+					total := len(tasks)
+					var payloadPreview string
+					if len(task.payload.Content) > 30 {
+						payloadPreview = task.payload.Content[:30] + "..."
+					} else {
+						payloadPreview = task.payload.Content
+					}
+					s.progressCallback(completed, total, target.URL, map[string]interface{}{
 						"phase": "response",
 						"param": task.param,
-						"payload": task.payload.Content[:min(20, len(task.payload.Content))],
+						"method": task.method,
+						"payload": payloadPreview,
 						"resp_len": len(respContent),
 						"resp_url": respURL,
+						"resp_status": respStatus,
 						"expected": task.payload.ExpectedOutput,
 						"found": task.payload.ExpectedOutput != "" && strings.Contains(respContent, task.payload.ExpectedOutput),
+						"error": err,
 					})
 				}
-
-				vuln := s.detector.AnalyzeResponse(resp, task.payload, baselineResp)
+				
+				if task.payload.ExpectedOutput != "" && strings.Contains(respContent, task.payload.ExpectedOutput) {
+					fmt.Printf("[VULN DETECTED] Target=%s, Param=%s, Method=%s, Payload=%s, ExpectedOutput=%s\n", 
+						target.URL, task.param, task.method, task.payload.Content, task.payload.ExpectedOutput)
+				}
+				
+				var currentBaseline map[string]interface{}
+				if task.method == "POST" {
+					s.mu.RLock()
+					if postBaseline, ok := s.baselines[target.URL+"::POST"]; ok {
+						currentBaseline = postBaseline
+					}
+					s.mu.RUnlock()
+				}
+				if currentBaseline == nil {
+					currentBaseline = baselineResp
+				}
+				
+				vuln := s.detector.AnalyzeResponse(resp, task.payload, currentBaseline)
 				if vuln != nil {
+					fmt.Printf("[VULN CREATED] Target=%s, Param=%s, Severity=%s, Evidence=%s\n", 
+						vuln.Target, vuln.Parameter, vuln.Severity, vuln.Evidence)
 					vuln.Target = target.URL
 					vuln.Parameter = task.param
 					vuln.RequestData = map[string]interface{}{
-						"method": target.Method,
+						"method": task.method,
 						"params": testParams,
 						"headers": target.Headers,
 					}
@@ -819,6 +1110,7 @@ func (s *Scanner) scanTarget(ctx context.Context, target *types.ScanTarget) []ty
 	}
 
 	go func() {
+		sentCount := 0
 		for _, task := range tasks {
 			if s.isStopped() {
 				break
@@ -828,9 +1120,11 @@ func (s *Scanner) scanTarget(ctx context.Context, target *types.ScanTarget) []ty
 				break
 			default:
 				taskChan <- task
+				sentCount++
 			}
 		}
 		close(taskChan)
+		fmt.Printf("[DEBUG] Sent %d tasks to workers\n", sentCount)
 	}()
 
 	go func() {
@@ -858,8 +1152,22 @@ func (s *Scanner) scanTarget(ctx context.Context, target *types.ScanTarget) []ty
 			if result.vuln != nil {
 				paramName = result.vuln.Parameter
 			}
-			s.reportProgress(current, totalPayloads, target.URL, map[string]interface{}{
-				"param": paramName,
+			
+			var overallProgress int
+			if totalPayloads > 0 {
+				targetProgress := current * 100 / totalPayloads
+				overallProgress = (targetIndex*100 + targetProgress) / totalTargets
+				if overallProgress > 100 {
+					overallProgress = 100
+				}
+			}
+			
+			s.reportProgress(overallProgress, 100, target.URL, map[string]interface{}{
+				"param":         paramName,
+				"target_index":  targetIndex + 1,
+				"total_targets": totalTargets,
+				"payload_current": current,
+				"payload_total": totalPayloads,
 			})
 
 			if result.vuln != nil {

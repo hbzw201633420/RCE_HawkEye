@@ -1,0 +1,55 @@
+# Binaries (ignore all exe except main binary)
+*.exe~
+*.dll
+*.so
+*.dylib
+rce-hawkeye
+rce-hawkeye-*
+
+# Test binary
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Dependency directories
+vendor/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Reports (keep directory structure)
+reports/*.json
+reports/*.html
+reports/*.md
+reports/*/
+!reports/.gitkeep
+
+# Data files
+data/history/*.json
+data/dict/backup/
+!data/history/.gitkeep
+!data/dict/.gitkeep
+
+# Config with sensitive data
+configs/config.local.yaml
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Build artifacts
+dist/
+build/
